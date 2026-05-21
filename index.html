@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IV Kongres – Panel Ekranu Centralnego</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07070f;
+    --surface: #0e0e1c;
+    --surface2: #13132a;
+    --border: #1c2240;
+    --accent: #3d9bff;
+    --green: #3dffaa;
+    --orange: #ffaa3d;
+    --red: #ff4444;
+    --text: #c8d4f0;
+    --muted: #4a5878;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(61,155,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,155,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── FLASH OVERLAY ── */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #overlay.active { display: flex; }
+  #overlay.flash-on { background: rgba(255,68,68,0.94); }
+  #overlay.flash-off { background: rgba(0,0,0,0.92); }
+  #overlay.warn-on { background: rgba(255,160,30,0.92); }
+  #overlay.warn-off { background: rgba(0,0,0,0.9); }
+
+  .overlay-badge {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #fff;
+    opacity: 0.8;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .overlay-time {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 28px;
+  }
+  .overlay-card {
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 36px 56px;
+    text-align: center;
+    max-width: 680px;
+    backdrop-filter: blur(10px);
+  }
+  .overlay-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  .overlay-central {
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+    white-space: pre-line;
+    word-break: break-all;
+  }
+  .overlay-event {
+    margin-top: 18px;
+    font-size: 16px;
+    color: rgba(220,230,255,0.75);
+    line-height: 1.5;
+    white-space: pre-line;
+  }
+  .overlay-timer {
+    margin-top: 22px;
+    display: inline-flex; align-items: center; gap: 12px;
+    background: rgba(0,0,0,0.45);
+    border: 2px solid rgba(255,220,80,0.6);
+    border-radius: 12px;
+    padding: 12px 28px;
+  }
+  .overlay-timer-icon { font-size: 22px; }
+  .overlay-timer-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
+    color: rgba(255,220,80,0.7); text-transform: uppercase; margin-bottom: 3px;
+  }
+  .overlay-timer-value {
+    font-family: var(--mono); font-size: 32px; font-weight: 800;
+    color: #ffe055; letter-spacing: 2px;
+  }
+  .overlay-hint {
+    margin-top: 36px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 2px;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .header-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #8aaeff;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── TOP GRID ── */
+  .top-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── ROW CT2 CONTROLS ── */
+  .row-ct2 {
+    display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  }
+  .ct2-input {
+    width: 100%; padding: 5px 8px;
+    border-radius: 6px; border: 1px solid #1c2240;
+    background: var(--bg); color: #ffe055;
+    font-family: var(--mono); font-size: 12px; text-align: center;
+    outline: none; transition: border-color 0.2s;
+  }
+  .ct2-input:focus { border-color: #ffe055; }
+  .ct2-input::placeholder { color: #3a3a50; }
+
+  /* ── OVERLAY EXTEND ── */
+  .overlay-extend {
+    margin-top: 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,100,100,0.3);
+    border-radius: 12px; padding: 14px 28px;
+  }
+  .overlay-extend-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
+    color: rgba(255,180,180,0.8);
+  }
+  .ext-btn {
+    padding: 10px 24px; border-radius: 9px; border: none;
+    background: rgba(200,50,50,0.85); color: #fff;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    cursor: pointer; letter-spacing: 1px; transition: background 0.2s;
+  }
+  .ext-btn:hover { background: rgba(230,70,70,0.95); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .card-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  /* ── CLOCK ── */
+  #clock {
+    font-family: var(--mono);
+    font-size: 54px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+  #eff-block { margin-top: 12px; }
+  #eff-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; color: var(--muted); margin-bottom: 4px; }
+  #eff-clock { font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: 2px; }
+
+  /* ── DAY BUTTONS ── */
+  .day-btn {
+    display: block; width: 100%; padding: 11px 16px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-family: var(--sans); font-size: 14px; font-weight: 500;
+    cursor: pointer; text-align: left; margin-bottom: 10px;
+    transition: all 0.2s;
+  }
+  .day-btn:last-child { margin-bottom: 0; }
+  .day-btn.active {
+    border-color: var(--accent);
+    background: rgba(61,155,255,0.1);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── OFFSET ── */
+  .offset-card { margin-bottom: 16px; }
+  .offset-row {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .offset-group { display: flex; align-items: center; gap: 8px; }
+  .offset-group label { font-size: 13px; color: #6a7a9a; }
+  .offset-group input {
+    width: 72px; padding: 7px 10px;
+    border-radius: 8px; border: 1px solid #1c2240;
+    background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 15px; text-align: center;
+    outline: none; transition: border-color 0.2s;
+  }
+  .offset-group input:focus { border-color: var(--accent); }
+  .btn-apply {
+    padding: 9px 20px; border-radius: 8px; border: none;
+    background: #1a3a7a; color: #9ac0ff;
+    font-family: var(--sans); font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-apply:hover { background: #2255aa; }
+  .btn-reset {
+    padding: 9px 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-size: 13px; cursor: pointer;
+    transition: color 0.2s;
+  }
+  .btn-reset:hover { color: var(--text); }
+  #offset-display { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .offset-hint { font-size: 11px; color: #2a3a50; margin-top: 10px; }
+
+  /* ── NOW / NEXT ── */
+  .now-next {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .now-card { background: #090f0a; border-color: #142018; }
+  .next-card { background: #100c02; border-color: #2a1e04; }
+  .now-card .card-label { color: #3a6a45; }
+  .next-card .card-label { color: #7a5a20; }
+
+  /* ── COUNTDOWN ── */
+  .countdown-card {
+    background: #08081a; border-color: #1a1a3a;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    min-width: 140px; padding: 20px 18px;
+  }
+  .countdown-card .card-label { color: #3a4a7a; }
+  #countdown-display {
+    font-family: var(--mono); font-weight: 800;
+    line-height: 1; letter-spacing: 2px;
+    transition: color 0.4s;
+  }
+  #countdown-display.large { font-size: 42px; }
+  #countdown-display.urgent { font-size: 52px; color: var(--red) !important; animation: pulse 0.6s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+  #countdown-bar-wrap {
+    width: 100%; height: 6px; background: #1a1a3a;
+    border-radius: 3px; margin-top: 12px; overflow: hidden;
+  }
+  #countdown-bar {
+    height: 100%; border-radius: 3px;
+    transition: width 1s linear, background 0.4s;
+  }
+  #countdown-sub {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+    margin-top: 8px; color: #3a4a7a;
+  }
+  .central-name {
+    font-family: var(--mono); font-size: 22px; font-weight: 800;
+    line-height: 1.3; margin-bottom: 10px; white-space: pre-line;
+    word-break: break-word;
+  }
+  .central-event { font-size: 12px; color: #6a8898; white-space: pre-line; line-height: 1.5; }
+  .central-time { font-family: var(--mono); font-size: 11px; margin-top: 10px; }
+
+  /* ── TABLE ── */
+  .table-card { padding: 0; overflow: hidden; }
+  .table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 4px; color: var(--muted);
+    text-transform: uppercase;
+  }
+  .table-body { max-height: 440px; overflow-y: auto; scroll-behavior: smooth; }
+  .table-body::-webkit-scrollbar { width: 10px; }
+  .table-body::-webkit-scrollbar-track { background: #0a0a18; border-radius: 0 0 16px 0; }
+  .table-body::-webkit-scrollbar-thumb {
+    background: #2a3a6a; border-radius: 5px;
+    border: 2px solid #0a0a18;
+  }
+  .table-body::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 60px 36px;
+    gap: 12px; padding: 12px 20px;
+    border-bottom: 1px solid #0e0e1c;
+    align-items: center;
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+  .row:hover { background: rgba(61,155,255,0.06); }
+  .row.past { opacity: 0.38; }
+  .row.current { background: rgba(61,255,150,0.05); }
+  .row.next { background: rgba(255,160,50,0.04); }
+  .row.clicked-sync {
+    animation: syncFlash 0.6s ease;
+  }
+  @keyframes syncFlash {
+    0%   { background: rgba(61,155,255,0.35); }
+    100% { background: transparent; }
+  }
+  .row-sync-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px; border: 1px solid #1c2240;
+    background: transparent; color: #3a4a6a;
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .row:hover .row-sync-btn { border-color: var(--accent); color: var(--accent); background: rgba(61,155,255,0.1); }
+  .timer-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #1a1500; border: 1px solid #3a3000;
+    color: #ffe055; font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+    margin-top: 5px;
+  }
+  .now-timer {
+    margin-top: 10px;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #0f0e00; border: 1px solid #3a3200;
+    border-radius: 10px; padding: 8px 14px;
+  }
+  .now-timer-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; color: #6a6000; }
+  .now-timer-val { font-family: var(--mono); font-size: 20px; font-weight: 800; color: #ffe055; }
+  .sync-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #0e1e3a; border: 1px solid var(--accent);
+    color: var(--accent); font-family: var(--mono); font-size: 12px;
+    padding: 10px 22px; border-radius: 10px; letter-spacing: 1px;
+    z-index: 999; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sync-toast.visible { opacity: 1; }
+  .ct-btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid #1c2240; background: #0e0e1c;
+    color: #6a8aaa; font-size: 16px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ct-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(61,155,255,0.1); }
+  .ct-set-btn {
+    width: 100%; padding: 5px 0; border-radius: 6px;
+    border: 1px solid #3a3000; background: #1a1500;
+    color: #ffe055; font-family: var(--mono); font-size: 11px;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .ct-set-btn:hover { background: #2a2200; border-color: #ffe055; }
+  .row-time { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .row.current .row-time { color: var(--green); }
+  .row.next .row-time { color: var(--orange); }
+  .row.past .row-time { color: var(--muted); }
+  .row-event { font-size: 12px; color: #6a7a9a; white-space: pre-line; line-height: 1.4; }
+  .row-central { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #8aaeff; white-space: pre-line; word-break: break-word; }
+  .row.current .row-central { color: var(--green); }
+  .row.next .row-central { color: var(--orange); }
+  .badge {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    padding: 3px 7px; border-radius: 5px; letter-spacing: 1px;
+  }
+  .badge-now { background: #0a2a14; color: var(--green); }
+  .badge-next { background: #1a1000; color: var(--orange); }
+
+  .footer-note {
+    text-align: center; margin-top: 16px;
+    font-family: var(--mono); font-size: 10px;
+    color: #1c2240; letter-spacing: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .top-grid, .now-next { grid-template-columns: 1fr; }
+    .countdown-card { min-width: unset; }
+    #clock { font-size: 40px; }
+    .overlay-central { font-size: 30px; }
+    .overlay-card { padding: 24px 28px; }
+    .row { grid-template-columns: 70px 1fr 36px; }
+    .row-central, .badge { display: none; }
+  }
+  /* ── CHANGE BANNER ── */
+  #change-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
+    background: #cc0000;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 10px 20px;
+    transform: translateY(-100%);
+    transition: transform 0.35s cubic-bezier(.2,.8,.3,1);
+    box-shadow: 0 4px 24px rgba(200,0,0,0.5);
+  }
+  #change-banner.visible { transform: translateY(0); }
+  #change-banner-icon { font-size: 18px; animation: blink 0.7s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  #change-banner-text {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    letter-spacing: 3px; color: #fff; text-transform: uppercase;
+  }
+  #change-banner-val {
+    font-family: var(--mono); font-size: 13px; font-weight: 400;
+    color: rgba(255,200,200,0.9); margin-left: 4px;
+  }
+  #change-banner-close {
+    margin-left: 16px; background: rgba(255,255,255,0.15);
+    border: none; border-radius: 6px; color: #fff;
+    padding: 3px 10px; font-size: 12px; cursor: pointer;
+  }
+
+  /* ── SYNC STATUS DOT ── */
+  #sync-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+    color: var(--muted); margin-top: 8px;
+  }
+  #sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #334; transition: background 0.3s;
+  }
+  #sync-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  #sync-dot.error { background: var(--red); }
+  /* ── IMPORT PANEL ── */
+  .import-toggle {
+    width: 100%; padding: 10px 16px; border-radius: 10px;
+    border: 1px dashed #2a3a5a; background: transparent;
+    color: #4a6a9a; font-family: var(--mono); font-size: 12px;
+    letter-spacing: 2px; cursor: pointer; margin-bottom: 0;
+    transition: all 0.2s; text-align: center;
+  }
+  .import-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .drop-zone {
+    border: 2px dashed #1c2240; border-radius: 12px;
+    padding: 28px; text-align: center; cursor: pointer;
+    transition: all 0.2s; color: #4a5878;
+  }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); color: var(--accent); background: rgba(61,155,255,0.05); }
+  .drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+  .drop-zone-text { font-size: 13px; margin-bottom: 12px; }
+  .drop-zone-btn {
+    padding: 8px 20px; border-radius: 7px; border: 1px solid #2a3a5a;
+    background: transparent; color: #6a8aaa; font-size: 13px; cursor: pointer;
+  }
+  .drop-zone-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .import-preview {
+    overflow-x: auto; margin: 12px 0;
+    max-height: 180px; overflow-y: auto;
+    border-radius: 8px; border: 1px solid #1c2240;
+  }
+  .import-preview table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .import-preview th { background: #10102a; color: #6a8aaa; padding: 6px 10px; text-align: left; position: sticky; top: 0; font-family: var(--mono); letter-spacing: 1px; }
+  .import-preview td { padding: 5px 10px; border-top: 1px solid #0e0e1c; color: #8899bb; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  .import-preview tr:hover td { background: rgba(61,155,255,0.04); }
+  .mapping-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .mapping-item label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: #4a5878; display: block; margin-bottom: 5px; }
+  .mapping-item select, .mapping-item input {
+    width: 100%; padding: 7px 10px; border-radius: 7px;
+    border: 1px solid #1c2240; background: var(--bg);
+    color: var(--text); font-family: var(--mono); font-size: 12px; outline: none;
+  }
+  .mapping-item select:focus, .mapping-item input:focus { border-color: var(--accent); }
+  .import-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .btn-import-ok {
+    flex: 1; padding: 10px; border-radius: 8px; border: none;
+    background: #1a4a2a; color: var(--green);
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-import-ok:hover { background: #1f6035; }
+  .btn-import-cancel {
+    padding: 10px 16px; border-radius: 8px; border: 1px solid #1c2240;
+    background: transparent; color: #4a5878; font-size: 12px; cursor: pointer;
+  }
+  .day-btn-imported { border-color: #2a4a2a !important; color: var(--green) !important; }
+  .day-btn-imported.active { background: rgba(61,255,150,0.1) !important; }
+  .badge-del {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px;
+    border-radius: 4px; background: #1a0a0a; color: #ff6644;
+    cursor: pointer; border: 1px solid #3a1a1a; margin-left: 4px;
+  }
+  .overlay-actions {
+    display: flex; gap: 16px; margin-top: 28px; flex-wrap: wrap; justify-content: center;
+  }
+  .overlay-btn-jump {
+    padding: 12px 28px; border-radius: 10px; border: none;
+    background: rgba(61,255,150,0.15); color: #3dffaa;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer;
+    border: 1px solid rgba(61,255,150,0.4);
+    transition: all 0.2s;
+  }
+  .overlay-btn-jump:hover { background: rgba(61,255,150,0.25); }
+  .overlay-btn-over {
+    padding: 12px 28px; border-radius: 10px; border: none;
+    background: rgba(255,100,0,0.15); color: #ff8844;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer;
+    border: 1px solid rgba(255,100,0,0.4);
+    transition: all 0.2s;
+  }
+  .overlay-btn-over:hover { background: rgba(255,100,0,0.25); }
+  .overlay-btn-over.is-next {
+    background: rgba(255,50,50,0.25); color: #ff4444;
+    border-color: rgba(255,50,50,0.6); font-size: 16px;
+    animation: pulse 0.8s ease-in-out infinite alternate;
+  }
+  /* ── CRYPTO WIDGETS ── */
+  .crypto-section { margin-top: 24px; }
+  .crypto-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .crypto-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; position: relative;
+  }
+  .crypto-card.best { border-color: #3a3000; background: #0e0c00; }
+  .crypto-sym { font-family: var(--mono); font-size: 15px; font-weight: 800; color: #8aaeff; letter-spacing: 1px; }
+  .crypto-card.best .crypto-sym { color: #ffe055; }
+  .crypto-price { font-family: var(--mono); font-size: 13px; color: var(--text); margin: 5px 0 8px; }
+  .crypto-changes { display: flex; flex-direction: column; gap: 3px; }
+  .crypto-chg { font-family: var(--mono); font-size: 11px; display: flex; justify-content: space-between; }
+  .crypto-chg-lbl { color: var(--muted); }
+  .pos { color: #3dffaa; font-weight: 700; }
+  .neg { color: #ff4444; font-weight: 700; }
+  .crypto-refresh { font-family: var(--mono); font-size: 9px; color: #2a3a5a; margin-top: 6px; letter-spacing: 1px; }
+  .crypto-loading { font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 20px; text-align: center; }
+  .best-badge { position: absolute; top: 8px; right: 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 1px; color: #ffe055; background: #2a2000; padding: 2px 6px; border-radius: 4px; }
+
+  .badge-del:hover { background: #2a1010; }
+</style>
+</head>
+<body>
+
+<!-- CHANGE BANNER -->
+<div id="change-banner">
+  <span id="change-banner-icon">🔴</span>
+  <span id="change-banner-text">ZMIANA CZASU</span>
+  <span id="change-banner-val"></span>
+  <button id="change-banner-close" onclick="hideBanner()">✕</button>
+</div>
+
+<!-- FLASH OVERLAY -->
+<div id="overlay" onclick="dismissAlert()">
+  <div class="overlay-badge" id="overlay-badge">⚠️ ZA CHWILĘ – ZMIANA EKRANU CENTRALNEGO</div>
+  <div class="overlay-time" id="overlay-time"></div>
+  <div class="overlay-card">
+    <div class="overlay-label">EKRAN CENTRALNY</div>
+    <div class="overlay-central" id="overlay-central"></div>
+    <div class="overlay-event" id="overlay-event"></div>
+    <div class="overlay-timer" id="overlay-timer" style="display:none">
+      <span class="overlay-timer-icon">⏱</span>
+      <div>
+        <div class="overlay-timer-label">PUŚĆ TIMER NA</div>
+        <div class="overlay-timer-value" id="overlay-timer-val"></div>
+      </div>
+    </div>
+  </div>
+  <div class="overlay-actions" onclick="event.stopPropagation()">
+    <button class="overlay-btn-jump" onclick="event.stopPropagation();overlayJumpNext()">→ NASTĘPNY PUNKT</button>
+    <button class="overlay-btn-over" id="overtime-btn" onclick="event.stopPropagation();overlayOvertime()">⏱ OVER TIME</button>
+  </div>
+  <div class="overlay-hint">KLIKNIJ GDZIEKOLWIEK, ABY ZAMKNĄĆ</div>
+</div>
+
+<div class="sync-toast" id="sync-toast"></div>
+
+<!-- MAIN -->
+<div class="main">
+  <div style="text-align:center;padding:28px 0 12px;font-family:var(--mono);font-size:48px;font-weight:800;letter-spacing:12px;color:#1e2a4a">TEKTIME</div>
+
+  <!-- TOP: clock + day -->
+  <div class="top-grid">
+    <div class="card">
+      <div class="card-label">Zegar</div>
+      <div id="clock">00:00:00</div>
+      <div id="eff-block" style="display:none">
+        <div id="eff-label">CZAS EFEKTYWNY (ze przesunięciem)</div>
+        <div id="eff-clock" style="color:#ffaa3d"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Wybór dnia</div>
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#3a4a7a;margin-bottom:6px">KONFERENCJA JAKOŚĆ W OZ</div>
+      <button class="day-btn active" onclick="setDay('21.05.2026',this)">🏥 21.05 – Dzień 1</button>
+      <button class="day-btn" onclick="setDay('22.05.2026',this)">🏥 22.05 – Dzień 2</button>
+      <div id="imported-days-container"></div>
+    </div>
+  </div>
+
+  <!-- IMPORT SZPIGLA -->
+  <div style="margin-bottom:16px">
+    <button class="import-toggle" onclick="toggleImport()">📂 Importuj</button>
+    <div class="card" id="import-panel" style="display:none;margin-top:8px">
+      <div class="card-label">IMPORT SZPIGLA</div>
+
+      <!-- KROK 1: Wgraj plik -->
+      <div id="import-step-1">
+        <div class="drop-zone" id="drop-zone"
+          onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleFileDrop(event)">
+          <div class="drop-zone-icon">📄</div>
+          <div class="drop-zone-text">Przeciągnij plik z harmonogramem<br><small style="color:#3a4a5a">(.xlsx, .xls, .csv, .pdf, .docx, .doc)</small></div>
+          <button class="drop-zone-btn" onclick="event.stopPropagation();document.getElementById('file-input').click()">Wybierz plik</button>
+        </div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc" style="display:none" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- KROK 2: Mapowanie kolumn -->
+      <div id="import-step-2" style="display:none">
+        <div style="font-family:var(--mono);font-size:11px;color:#4af;margin-bottom:8px" id="import-filename"></div>
+        <div class="import-preview" id="import-preview"></div>
+        <div class="mapping-grid">
+          <div class="mapping-item" style="grid-column:1/-1">
+            <label>NAZWA / DATA SZPIGLA</label>
+            <input type="text" id="import-name" placeholder="np. 23.05.2026 – Konferencja XYZ">
+          </div>
+          <div class="mapping-item">
+            <label>KOLUMNA CZASU ⏰</label>
+            <select id="col-time"></select>
+          </div>
+          <div class="mapping-item">
+            <label>KOLUMNA OPISU PUNKTU</label>
+            <select id="col-event"></select>
+          </div>
+          <div class="mapping-item" style="grid-column:1/-1">
+            <label>⭐ KOLUMNA NAJWAŻNIEJSZA (ekran / prelegent)</label>
+            <select id="col-central"></select>
+          </div>
+          <div class="mapping-item" style="grid-column:1/-1">
+            <label>KOLUMNA TIMERA (opcjonalnie)</label>
+            <select id="col-timer"><option value="">— brak —</option></select>
+          </div>
+        </div>
+        <div id="import-warning" style="display:none;font-family:var(--mono);font-size:11px;color:#ff8844;margin-bottom:8px;padding:8px 12px;background:#1a0e00;border-radius:6px;border:1px solid #3a2000"></div>
+        <div class="import-actions">
+          <button class="btn-import-ok" onclick="importConfirm()">✓ IMPORTUJ</button>
+          <button class="btn-import-cancel" onclick="importReset()">✕ Anuluj</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFSET -->
+  <div class="card offset-card">
+    <div class="card-label">Przesunięcie czasu (względem szpigla)</div>
+    <div class="offset-row">
+      <div class="offset-group">
+        <label>Minuty:</label>
+        <input type="number" id="inp-min" placeholder="0" value="0">
+      </div>
+      <div class="offset-group">
+        <label>Sekundy:</label>
+        <input type="number" id="inp-sec" placeholder="0" value="0">
+      </div>
+      <button class="btn-apply" onclick="applyOffset()">Zastosuj</button>
+      <button class="btn-reset" id="btn-reset" style="display:none" onclick="resetOffset()">Resetuj (0)</button>
+      <span id="offset-display"></span>
+    </div>
+    <div class="offset-hint">Wartości dodatnie = Twój zegar jest za szpiglem. Ujemne = przed szpiglem.</div>
+    <div id="sync-status" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <span id="sync-dot"></span>
+      <span id="sync-label">ŁĄCZENIE…</span>
+      <button id="sync-toggle-btn" onclick="toggleSync()" style="margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid #2a3a5a;background:transparent;color:#6a8aaa;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s">⏸ WYŁĄCZ SYNC</button>
+    </div>
+  </div>
+
+  <div class="now-next">
+    <div class="card now-card">
+      <div class="card-label" id="now-card-label">AKTUALNIE – EKRAN CENTRALNY</div>
+      <div class="central-name" id="now-central" style="color:var(--green)">—</div>
+      <div class="central-event" id="now-event"></div>
+      <div class="central-time" id="now-time" style="color:#3a6a45"></div>
+      <div class="now-timer" id="now-timer" style="display:none">
+        <span style="font-size:16px">⏱</span>
+        <div>
+          <div class="now-timer-label">TIMER</div>
+          <div class="now-timer-val" id="now-timer-val"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card countdown-card" id="countdown-card">
+      <div class="card-label">Czas do zmiany</div>
+      <div id="countdown-display">—</div>
+      <div id="countdown-bar-wrap" style="display:none">
+        <div id="countdown-bar"></div>
+      </div>
+      <div id="countdown-sub"></div>
+      <div style="margin-top:10px;font-family:var(--mono);text-align:center;line-height:1.7">
+        <div style="font-size:11px;color:#2a3a55;letter-spacing:1px" id="cd-clock-real"></div>
+        <div style="font-size:11px;letter-spacing:1px" id="cd-clock-eff"></div>
+      </div>
+    </div>
+
+    <div class="card next-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div class="card-label">Następna zmiana</div>
+        <button onclick="jumpToNext()" title="Przejdź od razu do następnego punktu" style="width:32px;height:32px;border-radius:8px;border:1px solid #3a2a00;background:#1a1000;color:#fb8;font-size:20px;font-weight:700;cursor:pointer;line-height:1;transition:all .15s" onmouseover="this.style.background='#2a1800';this.style.borderColor='#fb8'" onmouseout="this.style.background='#1a1000';this.style.borderColor='#3a2a00'">+</button>
+      </div>
+      <div class="central-name" id="next-central" style="color:var(--orange)">—</div>
+      <div class="central-event" id="next-event"></div>
+      <div class="central-time" id="next-time" style="color:#6a5020"></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card table-card">
+    <div class="table-header" id="table-header">HARMONOGRAM – EKRAN CENTRALNY</div>
+    <div class="table-body" id="table-body"></div>
+  </div>
+
+  <!-- CRYPTO -->
+  <div class="crypto-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="card-label" style="margin:0">KRYPTO</div>
+      <div id="crypto-refresh-time" class="crypto-refresh"></div>
+    </div>
+    <div class="crypto-grid" id="crypto-grid">
+      <div class="crypto-loading">⏳ Pobieranie cen…</div>
+    </div>
+  </div>
+
+  <div class="footer-note">ALERT 60 SEKUND PRZED ZMIANĄ · KLIKNIJ WIERSZ ABY ZSYNCHRONIZOWAĆ CZAS · KLIKNIJ OVERLAY ABY ZAMKNĄĆ</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SCHEDULE = {};
+
+const SCHEDULE_CMJ = {
+  "21.05.2026": [
+    { time:"10:00:00", event:"Otwarcie Konferencji. Przywitanie gości.", central:"Agnieszka Pietraszewska-Macheta", session:"Sesja I – Polityka jakości" },
+    { time:"10:20:00", event:"Wykład inauguracyjny", central:"Tomasz Maciejewski", session:"Sesja I – Polityka jakości" },
+    { time:"10:45:00", event:"Jakość w opiece zdrowotnej, perspektywa Rzecznika Praw Pacjenta", central:"Bartłomiej Chmielowiec", session:"Sesja I – Polityka jakości" },
+    { time:"11:00:00", event:"Współdziałanie Inspekcji Sanitarnej w budowaniu jakości i bezpieczeństwa", central:"Paweł Grzesiowski", session:"Sesja I – Polityka jakości" },
+    { time:"11:15:00", event:"Wpływ taryfikacji na jakość udzielanych świadczeń", central:"Daniel Rutkowski", session:"Sesja I – Polityka jakości" },
+    { time:"11:30:00", event:"Standardy zarządzania jako DNA jakości w ochronie zdrowia", central:"Beata Buchelt", session:"Sesja I – Polityka jakości" },
+    { time:"11:45:00", event:"Komunikacja z rodziną pacjenta z zaburzeniami świadomości jako element jakości opieki", central:"Justyna Kornecka", session:"Sesja I – Polityka jakości" },
+    { time:"12:00:00", event:"PRZERWA KAWOWA", central:"— przerwa —" },
+    { time:"12:30:00", event:"Czy Akredytacja dryfuje na manowce?", central:"Rafał Niżankowski", session:"Sesja II – Akredytacja w nowym systemie" },
+    { time:"12:40:00", event:"Działania Rady Akredytacyjnej w roku 2025", central:"Tomasz Stefaniak", session:"Sesja II – Akredytacja" },
+    { time:"13:00:00", event:"Patomorfologia – akredytacja szpitali oraz jednostek diagnostyki – mity i realia", central:"Andrzej Marszałek", session:"Sesja II – Akredytacja" },
+    { time:"13:20:00", event:"Między teorią a praktyką: problemy we wdrażaniu wybranych standardów akredytacyjnych", central:"Anna Hyży-Topolewska\nPaulina Kołat-Brodecka", session:"Sesja II – Akredytacja" },
+    { time:"13:50:00", event:"Czy ocena jakości świadczeń zdrowotnych w zakresie onkologii to oddzielne zagadnienie?", central:"Bernard Waśko", session:"Sesja II – Akredytacja" },
+    { time:"14:10:00", event:"Nowy system akredytacji a bezpieczeństwo pacjenta. Czy bez Human Factors jest to możliwe?", central:"Monika Raulinajtys-Grzybek\nArnold Maciejewski", session:"Sesja II – Akredytacja" },
+    { time:"14:40:00", event:"Farmakoterapia w szpitalu akredytowanym – źródła błędów i krytycznych interakcji", central:"Jarosław Woroń", session:"Sesja II – Akredytacja" },
+    { time:"15:00:00", event:"LUNCH", central:"— przerwa —" },
+    { time:"16:00:00", event:"Wstęp do sesji GQP", central:"Barbara Kutryba", session:"Sesja III – Good Quality Project" },
+    { time:"16:10:00", event:"Higiena rąk w placówkach leczniczych – nowe trendy i wymagania", central:"Paweł Grzesiowski", session:"Sesja III – GQP" },
+    { time:"16:30:00", event:"Farmacja kliniczna i przeglądy lekowe w modelu opieki interdyscyplinarnej", central:"Aleksander Kukliński", session:"Sesja III – GQP" },
+    { time:"16:45:00", event:"Prehabilitacja w cyklu doskonalenia jakości – wdrożenie i pierwsza ocena projektu", central:"Aleksandra Dorobek", session:"Sesja III – GQP" },
+    { time:"17:00:00", event:"Transplantologia i mechaniczne wspomaganie krążenia – oddział interdyscyplinarny", central:"Wojciech Płazak", session:"Sesja III – GQP" },
+    { time:"17:15:00", event:"Nowy standard w kardiochirurgii – od prehabilitacji do zintegrowanej opieki", central:"Dorota Sobczyk", session:"Sesja III – GQP" },
+    { time:"17:30:00", event:"BLiNa – bezpieczna linia, bezpieczny pacjent", central:"Sylwia Miętkiewicz", session:"Sesja III – GQP" },
+    { time:"17:45:00", event:"Bezpieczeństwo pacjenta na wyciągnięcie ręki – cyfryzacja audytu", central:"Beata Denisewicz", session:"Sesja III – GQP" },
+    { time:"18:00:00", event:"Od próbki do decyzji – nowa jakość w TDM", central:"Magdalena Wieczorek", session:"Sesja III – GQP" },
+    { time:"18:15:00", event:"Architektura monitorowania działalności klinicznej", central:"Seweryn Grudniewicz", session:"Sesja III – GQP" },
+    { time:"18:30:00", event:"Redukcja Zakażeń Odcewnikowych przez Optymalizację Dostępów Naczyniowych", central:"Frosina Rega", session:"Sesja III – GQP" },
+    { time:"18:45:00", event:"Wdrożenie Systemu Wczesnego Reagowania \"SWIT NEWS\"", central:"Tomasz Lonc", session:"Sesja III – GQP" },
+    { time:"19:00:00", event:"KOLACJA", central:"— koniec dnia —" },
+  ],
+  "22.05.2026": [
+    { time:"09:00:00", event:"Wstęp do sesji \"Better Care\"", central:"Barbara Kutryba", session:"Sesja IV – Better Care" },
+    { time:"09:10:00", event:"Bridging the safety gap: aligning informal care with global action plans on patient safety", central:"Sandra C. Buttigieg", session:"Sesja IV – Better Care" },
+    { time:"09:40:00", event:"Recognizing and protecting informal caregivers: Comparative legal frameworks in Europe", central:"Noemia Bessa Vilela", session:"Sesja IV – Better Care" },
+    { time:"10:05:00", event:"Bezpieczna opieka domowa: sytuacja opiekunów nieformalnych w Polsce", central:"Roman Lewandowski", session:"Sesja IV – Better Care" },
+    { time:"10:30:00", event:"Jakość opieki długoterminowej zaczyna się w domu: opiekunowie nieformalni i wsparcie systemowe", central:"Jacek Barszczewski", session:"Sesja IV – Better Care" },
+    { time:"11:00:00", event:"PRZERWA KAWOWA", central:"— przerwa —" },
+    { time:"11:30:00", event:"Odrębności w procesie zapewnienia jakości w szpitalach pediatrycznych", central:"Krystyna Piskorz-Ogórek", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"11:50:00", event:"Mały pacjent, duża odpowiedzialność – doświadczenia, bariery i dobre praktyki w drodze do akredytacji", central:"Kamila Ćwik", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"12:10:00", event:"Wyzwania w zarządzaniu jakością w uniwersyteckich szpitalach pediatrycznych", central:"Wojciech Cyrul", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"12:40:00", event:"Wizyta akredytacyjna w procesie doskonalenia jakości usług szpitala pediatrycznego", central:"Zbigniew Kułaga", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"13:00:00", event:"Budowanie systemu jakości banków mleka: od standardu organizacyjnego do akredytacji", central:"Aleksandra Wesołowska\nMałgorzata Witkowska-Zimny", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"13:20:00", event:"Od niezgodności do zdarzenia niepożądanego. Jak systemowo zarządzać ryzykiem w pediatrii", central:"Ewelina Wójcik", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"13:40:00", event:"Akredytacja zaczyna się przed projektem inwestycji. Jak OPZ i PFU mogą budować jakość opieki", central:"Piotr Springer", session:"Sesja V – Szpitale Dziecięce" },
+    { time:"14:00:00", event:"LUNCH", central:"— koniec konferencji —" },
+  ],
+};
+
+// Połączone harmonogramy – musi być PO deklaracji obu obiektów
+Object.assign(SCHEDULE, SCHEDULE_CMJ);
+
+const CONF_META = {
+  "21.05.2026": { colLabel: "PRELEGENT", nowLabel: "AKTUALNIE – PRELEGENT" },
+  "22.05.2026": { colLabel: "PRELEGENT", nowLabel: "AKTUALNIE – PRELEGENT" },
+};
+
+
+let syncEnabled = true;
+
+function toggleSync() {
+  syncEnabled = !syncEnabled;
+  const btn = document.getElementById('sync-toggle-btn');
+  if (syncEnabled) {
+    btn.textContent = '⏸ WYŁĄCZ SYNC';
+    btn.style.color = '#6a8aaa';
+    btn.style.borderColor = '#2a3a5a';
+    sbConnect();
+  } else {
+    if (sbChannel) { sbChannel.unsubscribe(); sbSubscribed = false; }
+    if (sbChannel) sbChannel = null;
+    btn.textContent = '▶ WŁĄCZ SYNC';
+    btn.style.color = '#ff8844';
+    btn.style.borderColor = '#3a2a00';
+    setSyncDot('error', 'SYNCHRONIZACJA WYŁĄCZONA');
+  }
+}
+
+// ─── SUPABASE CONFIG ─────────────────────────────────────────────────────────
+// 1. Wejdź na https://supabase.com → New project
+// 2. Project Settings → API → wklej URL i anon key poniżej
+const SUPABASE_URL  = "https://wruoponesyesbmfbgqpo.supabase.co";
+const SUPABASE_ANON = "sb_publishable_XgYWiGhXdjC-poRXmSOBLg_hg6DcuEe";
+const CHANNEL_NAME  = "kongres-nawa-2026";   // możesz zmienić nazwę kanału
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let selectedDay = "21.05.2026";
+let offsetSec = 0;
+let dismissed = new Set();
+let alertItem = null;
+let alertActive = false;
+let flashInterval = null;
+let flashPhase = 0;
+let isSyncing = false;
+let bannerTimer = null;
+let sbChannel = null;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function timeToSec(t) {
+  const p = t.split(":").map(Number);
+  return p[0]*3600 + p[1]*60 + (p[2]||0);
+}
+function secToTime(s) {
+  s = ((s % 86400) + 86400) % 86400;
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return [h,m,sec].map(v=>String(Math.floor(v)).padStart(2,"0")).join(":");
+}
+
+// timeStrToMs → epoch ms dla danej godziny dziś (tylko do countdown)
+function timeStrToMs(t) {
+  const p = t.split(":").map(Number);
+  const d = new Date();
+  d.setHours(p[0], p[1], p[2]||0, 0);
+  return d.getTime();
+}
+
+// nowSec / effSec → sekundy od północy (do porównań z harmonogramem)
+function nowSec() {
+  const n = new Date();
+  return n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds();
+}
+function effSec() { return nowSec() + offsetSec; }
+
+// effMs → epoch ms z precyzją milisekundową (tylko do odliczania countdown)
+function effMs() { return Date.now() + offsetSec * 1000; }
+
+// ─── CHANGE BANNER ───────────────────────────────────────────────────────────
+function showBanner(newOffsetSec, fromRemote) {
+  const sign = newOffsetSec >= 0 ? "+" : "";
+  const who = fromRemote ? "ZDALNA " : "";
+  document.getElementById("change-banner-text").textContent = who + "ZMIANA CZASU";
+  document.getElementById("change-banner-val").textContent =
+    `→ ${sign}${newOffsetSec}s (${sign}${(newOffsetSec/60).toFixed(1)} min)`;
+  document.getElementById("change-banner").classList.add("visible");
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(hideBanner, 6000);
+}
+function hideBanner() {
+  document.getElementById("change-banner").classList.remove("visible");
+}
+
+function setSyncDot(state, label) {
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  dot.className = state;
+  lbl.textContent = label || (
+    state === "connected" ? "SYNCHRONIZACJA AKTYWNA" :
+    state === "error"     ? "BRAK POŁĄCZENIA – sprawdź klucze Supabase" :
+                            "ŁĄCZENIE…"
+  );
+}
+
+// ─── SUPABASE REALTIME ───────────────────────────────────────────────────────
+function setInputsFromOffset(val) {
+  // Always normalize so seconds are in 0-59 range
+  const sign = val < 0 ? -1 : 1;
+  const abs  = Math.abs(val);
+  document.getElementById("inp-min").value = sign * Math.floor(abs / 60);
+  document.getElementById("inp-sec").value = sign * (abs % 60);
+}
+
+function applyRemoteOffset(val) {
+  if (val === offsetSec) return;
+  isSyncing = true;
+  offsetSec = val;
+  setInputsFromOffset(val);
+  updateOffsetDisplay();
+  dismissed = new Set();
+  alertItem = null;
+  dismissAlert();
+  renderTable();
+  showBanner(val, true);
+  isSyncing = false;
+}
+
+let sbClient = null;
+
+function sbHeaders() {
+  return {
+    "apikey": SUPABASE_ANON,
+    "Authorization": `Bearer ${SUPABASE_ANON}`,
+    "Content-Type": "application/json"
+  };
+}
+
+// Odczyt przy starcie – pobierz ostatnio zapisaną wartość
+async function sbLoadInitial() {
+  try {
+    setSyncDot("", "ŁĄCZENIE…");
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/kongres_offset?id=eq.1&select=value`,
+      { headers: sbHeaders() }
+    );
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (data?.[0] && typeof data[0].value === "number") {
+      const val = data[0].value;
+      if (val !== 0) {
+        applyRemoteOffset(val);
+        setSyncDot("connected", `WCZYTANO OFFSET ${val > 0 ? "+" : ""}${val}s`);
+        setTimeout(() => setSyncDot("connected"), 3000);
+      } else {
+        setSyncDot("connected");
+      }
+    } else {
+      // Tabela pusta – utwórz wiersz
+      await fetch(`${SUPABASE_URL}/rest/v1/kongres_offset`, {
+        method: "POST",
+        headers: { ...sbHeaders(), "Prefer": "return=minimal" },
+        body: JSON.stringify({ id: 1, value: 0 })
+      });
+      setSyncDot("connected");
+    }
+  } catch(e) {
+    setSyncDot("error", "BŁĄD – czy tabela istnieje? (patrz konsola)");
+    console.error("Supabase load error:", e);
+  }
+}
+
+// Zapis przy każdej zmianie
+async function sbSave(val) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/kongres_offset?id=eq.1`, {
+      method: "PATCH",
+      headers: { ...sbHeaders(), "Prefer": "return=minimal" },
+      body: JSON.stringify({ value: val })
+    });
+  } catch(e) {}
+}
+
+let sbSubscribed = false;
+
+function sbConnect() {
+  if (SUPABASE_URL.startsWith("WKLEJ")) {
+    setSyncDot("error", "SKONFIGURUJ SUPABASE (patrz komentarz w kodzie)");
+    return;
+  }
+  const { createClient } = window.supabase;
+  sbClient = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  sbChannel = sbClient.channel(CHANNEL_NAME, {
+    config: { broadcast: { self: false, ack: false } }
+  });
+
+  sbChannel
+    .on("broadcast", { event: "offset" }, ({ payload }) => {
+      if (typeof payload?.value === "number") {
+        setSyncDot("connected");
+        applyRemoteOffset(payload.value);
+      }
+    })
+    .subscribe((status) => {
+      sbSubscribed = (status === "SUBSCRIBED");
+      if (status === "SUBSCRIBED") {
+        setSyncDot("connected");
+        sbLoadInitial();
+      } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+        setSyncDot("error");
+      } else {
+        setSyncDot("", "ŁĄCZENIE…");
+      }
+    });
+}
+
+function sbSend(val) {
+  if (!syncEnabled || !sbChannel || !sbSubscribed) {
+    if (syncEnabled) sbSave(val);
+    return;
+  }
+  sbChannel.send({ type: "broadcast", event: "offset", payload: { value: val } });
+  sbSave(val);
+}
+
+// ─── BROADCAST CHANNEL (same browser, zero-latency) ──────────────────────────
+const bc = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("kongres_offset") : null;
+if (bc) {
+  bc.onmessage = (e) => {
+    if (e.data?.type === "offset") applyRemoteOffset(e.data.value);
+  };
+}
+
+function broadcastOffset(val) {
+  if (bc) bc.postMessage({ type: "offset", value: val });
+  sbSend(val);
+  showBanner(val, false);
+}
+
+// ─── OFFSET ──────────────────────────────────────────────────────────────────
+function applyOffset() {
+  const m = parseInt(document.getElementById("inp-min").value) || 0;
+  const s = parseInt(document.getElementById("inp-sec").value) || 0;
+  offsetSec = m * 60 + s;
+  setInputsFromOffset(offsetSec);   // normalize display (e.g. 1min 90sec → 2min 30sec)
+  updateOffsetDisplay();
+  dismissed = new Set();
+  alertItem = null;
+  dismissAlert();
+  renderTable();
+  broadcastOffset(offsetSec);
+}
+function resetOffset() {
+  offsetSec = 0;
+  setInputsFromOffset(0);
+  updateOffsetDisplay();
+  dismissed = new Set();
+  dismissAlert();
+  renderTable();
+  broadcastOffset(0);
+}
+function updateOffsetDisplay() {
+  const el = document.getElementById("offset-display");
+  const rb = document.getElementById("btn-reset");
+  const eb = document.getElementById("eff-block");
+  if (offsetSec !== 0) {
+    const sign = offsetSec > 0 ? "+" : "";
+    el.textContent = `${sign}${offsetSec}s (${sign}${(offsetSec/60).toFixed(1)} min)`;
+    el.style.color = offsetSec > 0 ? "#3dffaa" : "#ffaa3d";
+    rb.style.display = "";
+    eb.style.display = "";
+  } else {
+    el.textContent = "";
+    rb.style.display = "none";
+    eb.style.display = "none";
+  }
+}
+
+
+
+// ─── DAY ─────────────────────────────────────────────────────────────────────
+function setDay(day, btn) {
+  selectedDay = day;
+  dismissed = new Set();
+  alertItem = null;
+  dismissAlert();
+  document.querySelectorAll(".day-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const meta = CONF_META[day] || {};
+  document.getElementById("table-header").textContent = `HARMONOGRAM · ${meta.colLabel||"WYŚWIETLANIE"} · ${day}`;
+  document.getElementById("now-card-label").textContent = meta.nowLabel || "AKTUALNIE";
+  renderTable();
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+function syncToRow(item) {
+  const scheduledSec = timeToSec(item.time);
+  offsetSec = scheduledSec - nowSec();
+  setInputsFromOffset(offsetSec);
+  updateOffsetDisplay();
+  dismissed = new Set();
+  alertItem = null;
+  dismissAlert();
+  renderTable();
+  broadcastOffset(offsetSec);
+  const sign = offsetSec >= 0 ? "+" : "";
+  const toast = document.getElementById("sync-toast");
+  toast.textContent = `⏱ Synchronizacja z ${item.time.slice(0,5)} · przesunięcie ${sign}${offsetSec}s`;
+  toast.classList.add("visible");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> toast.classList.remove("visible"), 3000);
+}
+
+function renderTable() {
+  const body = document.getElementById("table-body");
+  const schedule = SCHEDULE[selectedDay]||[];
+  const eff = effSec();
+  const currentIdx = schedule.reduce((acc,item,i)=> timeToSec(item.time)<=eff?i:acc, -1);
+  body.innerHTML = "";
+  schedule.forEach((item,i) => {
+    const itemSec = timeToSec(item.time);
+    const isPast = itemSec < eff - 10;
+    const isCurrent = i===currentIdx;
+    const isNext = i===currentIdx+1;
+    const key = `${selectedDay}_${item.time}`;
+    const row = document.createElement("div");
+    row.className = "row" + (isPast?" past":"") + (isCurrent?" current":"") + (isNext?" next":"");
+    row.innerHTML = `
+      <div class="row-time">${item.time.slice(0,5)}</div>
+      <div class="row-event">${item.event.replace(/\n/g,"<br>")}${item.timer?`<br><span class="timer-pill">⏱ ${item.timer}</span>`:""}${item.session?`<br><span style="font-size:10px;color:#3a4a7a;letter-spacing:1px">${item.session}</span>`:""}</div>
+      <div class="row-central">${item.central.replace(/\n/g,"<br>")}</div>
+      <div>${isCurrent?'<span class="badge badge-now">TERAZ</span>':isNext?'<span class="badge badge-next">NEXT</span>':dismissed.has(key)?'<span style="color:#1c2240;font-size:11px">✓</span>':''}</div>
+      <button class="row-sync-btn" title="Ustaw jako aktualny punkt programu">⏱</button>`;
+    // Click anywhere on row = sync
+    row.addEventListener("click", (e) => {
+      row.classList.add("clicked-sync");
+      setTimeout(()=> row.classList.remove("clicked-sync"), 700);
+      syncToRow(item);
+    });
+    body.appendChild(row);
+  });
+  updateNowNext(schedule, currentIdx, eff);
+  // Przewiń do aktualnego wiersza po wyrenderowaniu
+  setTimeout(() => scrollToCurrentRow(currentIdx), 50);
+}
+
+function formatCountdown(sec) {
+  sec = Math.max(0, Math.floor(sec));   // zaokrąglenie w dół, bez dryfu
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+
+function updateNowNext(schedule, currentIdx, eff) {
+  const cur = currentIdx>=0 ? schedule[currentIdx] : null;
+  const nxt = currentIdx<schedule.length-1 ? schedule[currentIdx+1] : null;
+  document.getElementById("now-central").innerHTML = cur ? cur.central.replace(/\n/g,"<br>") : "—";
+  document.getElementById("now-event").innerHTML = cur ? cur.event.replace(/\n/g,"<br>") : "";
+  document.getElementById("now-time").textContent = cur ? `od ${cur.time}` : "";
+  const nowTimer = document.getElementById("now-timer");
+  if (cur && cur.timer) {
+    document.getElementById("now-timer-val").textContent = cur.timer;
+    nowTimer.style.display = "inline-flex";
+  } else {
+    nowTimer.style.display = "none";
+  }
+  const nextCentral = document.getElementById("next-central");
+  const nextEvent = document.getElementById("next-event");
+  const nextTime = document.getElementById("next-time");
+  nextCentral.innerHTML = nxt ? nxt.central.replace(/\n/g,"<br>") : "—";
+  nextEvent.innerHTML = nxt ? nxt.event.replace(/\n/g,"<br>") : "";
+  if (nxt) {
+    const timerHtml = nxt.timer ? `<span class="timer-pill">⏱ timer ${nxt.timer}</span>` : "";
+    nextTime.innerHTML = `o ${nxt.time} ${timerHtml}`;
+  } else {
+    nextTime.textContent = "Koniec programu";
+  }
+
+  // ── COUNTDOWN – precyzja milisekundowa ──
+  const cdDisplay = document.getElementById("countdown-display");
+  const cdBar = document.getElementById("countdown-bar");
+  const cdBarWrap = document.getElementById("countdown-bar-wrap");
+  const cdSub = document.getElementById("countdown-sub");
+
+  if (!nxt) {
+    cdDisplay.textContent = "—";
+    cdDisplay.className = "";
+    cdDisplay.style.color = "var(--muted)";
+    cdBarWrap.style.display = "none";
+    cdSub.textContent = "KONIEC PROGRAMU";
+    return;
+  }
+
+  const nxtMs  = timeStrToMs(nxt.time);
+  const curMs  = cur ? timeStrToMs(cur.time) : nxtMs;
+  const diffMs = nxtMs - effMs();
+  const diffSec = diffMs / 1000;                        // float, np. 74.231
+  const totalMs = nxtMs - curMs;
+  const pct = totalMs > 0 ? Math.max(0, Math.min(100, (diffMs / totalMs) * 100)) : 0;
+
+  cdDisplay.textContent = formatCountdown(diffSec);
+  cdBarWrap.style.display = "";
+
+  if (diffSec <= 0) {
+    cdDisplay.className = "urgent";
+    cdDisplay.style.color = "";
+    cdBar.style.width = "0%";
+    cdBar.style.background = "var(--red)";
+    cdSub.textContent = "ZMIANA TERAZ!";
+  } else if (diffSec <= 60) {
+    cdDisplay.className = "large urgent";
+    cdDisplay.style.color = "";
+    cdBar.style.width = pct + "%";
+    cdBar.style.background = "var(--red)";
+    cdSub.textContent = "ZA CHWILĘ!";
+  } else if (diffSec <= 300) {
+    cdDisplay.className = "large";
+    cdDisplay.style.color = "var(--orange)";
+    cdBar.style.width = pct + "%";
+    cdBar.style.background = "var(--orange)";
+    cdSub.textContent = nxt.time.slice(0,5);
+  } else {
+    cdDisplay.className = "large";
+    cdDisplay.style.color = "#6688cc";
+    cdBar.style.width = pct + "%";
+    cdBar.style.background = "var(--accent)";
+    cdSub.textContent = nxt.time.slice(0,5);
+  }
+}
+
+// ─── ALERT ───────────────────────────────────────────────────────────────────
+const WARN_BEFORE = 60;
+
+function checkAlert() {
+  const eff = effSec();   // sekundy od północy
+  const schedule = SCHEDULE[selectedDay]||[];
+  for (const item of schedule) {
+    const itemSec = timeToSec(item.time);
+    const key = `${selectedDay}_${item.time}`;
+    if (eff >= itemSec - WARN_BEFORE && eff <= itemSec + 10 && !dismissed.has(key)) {
+      if (!alertItem || alertItem.key !== key) {
+        alertItem = {...item, key, scheduledSec: itemSec};
+        showAlert();
+      }
+      return;
+    }
+  }
+}
+
+function showAlert() {
+  alertActive = true;
+  overlayOverTime = false;
+  flashPhase = 0;
+  const overlay = document.getElementById("overlay");
+  overlay.classList.add("active");
+  overlay.style.background = '';
+  document.getElementById("overlay-central").textContent = alertItem.central;
+  document.getElementById("overlay-event").textContent = alertItem.event;
+  document.getElementById("overlay-time").textContent = `Zaplanowany czas: ${alertItem.time}`;
+  const timerBlock = document.getElementById("overlay-timer");
+  if (alertItem.timer) {
+    document.getElementById("overlay-timer-val").textContent = alertItem.timer;
+    timerBlock.style.display = "inline-flex";
+  } else {
+    timerBlock.style.display = "none";
+  }
+  // Reset overtime button
+  const btn = document.getElementById("overtime-btn");
+  btn.textContent = "⏱ OVER TIME";
+  btn.classList.remove("is-next");
+  btn.onclick = (e) => { e.stopPropagation(); overlayOvertime(); };
+  if (flashInterval) clearInterval(flashInterval);
+  flashInterval = setInterval(doFlash, 450);
+  doFlash();
+}
+
+let overlayOverTime = false;
+
+function overlayOvertime() {
+  overlayOverTime = true;
+  if (flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+  const overlay = document.getElementById("overlay");
+  overlay.className = "overlay active";
+  overlay.style.background = "rgba(8,8,20,0.96)";
+  document.getElementById("overlay-badge").textContent = "⏳ OVER TIME – KLIKNIJ NEXT GDY PUNKT SIĘ SKOŃCZY";
+  const btn = document.getElementById("overtime-btn");
+  btn.textContent = "→ NEXT";
+  btn.classList.add("is-next");
+  btn.onclick = (e) => { e.stopPropagation(); overlayJumpNext(); };
+}
+
+function overlayJumpNext() {
+  jumpToNext();
+  overlayOverTime = false;
+  dismissAlert();
+}
+
+function doFlash() {
+  if (!alertActive || overlayOverTime) return;
+  const overlay = document.getElementById("overlay");
+  const isUrgent = alertItem && effSec() >= alertItem.scheduledSec;
+  flashPhase++;
+  const on = flashPhase % 2 === 0;
+  overlay.className = "overlay active " + (isUrgent ? (on?"flash-on":"flash-off") : (on?"warn-on":"warn-off"));
+  overlay.style.background = "";
+  document.getElementById("overlay-badge").textContent =
+    isUrgent ? "🔴 ZMIEŃ EKRAN CENTRALNY TERAZ!" : "⚠️ ZA CHWILĘ – ZMIANA EKRANU CENTRALNEGO";
+}
+
+function dismissAlert() {
+  alertActive = false;
+  overlayOverTime = false;
+  if (alertItem) dismissed.add(alertItem.key);
+  alertItem = null;
+  if (flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+  const overlay = document.getElementById("overlay");
+  overlay.className = "";
+  overlay.style.background = "";
+  const btn = document.getElementById("overtime-btn");
+  if (btn) {
+    btn.textContent = "⏱ OVER TIME";
+    btn.classList.remove("is-next");
+    btn.onclick = (e) => { e.stopPropagation(); overlayOvertime(); };
+  }
+}
+
+// ─── CLOCK TICK ──────────────────────────────────────────────────────────────
+let lastCurrentIdx = -2;
+
+function scrollToCurrentRow(currentIdx) {
+  const body = document.getElementById("table-body");
+  const rows = body.querySelectorAll(".row");
+  if (currentIdx < 0 || !rows[currentIdx]) return;
+  const row = rows[currentIdx];
+  const rowTop = row.offsetTop;
+  const rowH = row.offsetHeight;
+  const bodyH = body.clientHeight;
+  // Wyśrodkuj aktualny wiersz w okienku tabeli
+  body.scrollTop = rowTop - bodyH / 2 + rowH / 2;
+}
+
+function tick() {
+  const n = new Date();
+  const hh = String(n.getHours()).padStart(2,"0");
+  const mm = String(n.getMinutes()).padStart(2,"0");
+  const ss = String(n.getSeconds()).padStart(2,"0");
+  const realStr = `${hh}:${mm}:${ss}`;
+  document.getElementById("clock").textContent = realStr;
+
+  // Zegar w oknie countdown
+  const cdReal = document.getElementById("cd-clock-real");
+  const cdEff  = document.getElementById("cd-clock-eff");
+  if (cdReal) cdReal.textContent = `🕐 ${realStr}`;
+  if (cdEff) {
+    if (offsetSec !== 0) {
+      cdEff.style.display = "";
+      cdEff.style.color = offsetSec > 0 ? "#3dffaa" : "#ffaa3d";
+      cdEff.textContent = `⚡ ${secToTime(effSec())}`;
+    } else {
+      cdEff.style.display = "none";
+    }
+  }
+
+  if (offsetSec !== 0) {
+    document.getElementById("eff-clock").textContent = secToTime(effSec());
+  }
+  const schedule = SCHEDULE[selectedDay]||[];
+  const eff = effSec();
+  const currentIdx = schedule.reduce((acc,item,i)=> timeToSec(item.time)<=eff?i:acc, -1);
+  updateNowNext(schedule, currentIdx, eff);
+  // re-render rows (lightweight)
+  const rows = document.querySelectorAll(".row");
+  rows.forEach((row, i) => {
+    const item = schedule[i];
+    if (!item) return;
+    const itemSec = timeToSec(item.time);
+    const isPast = itemSec < eff - 10;
+    const isCurrent = i===currentIdx;
+    const isNext = i===currentIdx+1;
+    row.className = "row" + (isPast?" past":"") + (isCurrent?" current":"") + (isNext?" next":"");
+  });
+  // Auto-scroll gdy zmieni się aktualny wiersz
+  if (currentIdx !== lastCurrentIdx) {
+    lastCurrentIdx = currentIdx;
+    scrollToCurrentRow(currentIdx);
+  }
+  checkAlert();
+}
+
+function jumpToNext() {
+  const schedule = SCHEDULE[selectedDay] || [];
+  const eff = effSec();
+  const currentIdx = schedule.reduce((acc, item, i) => timeToSec(item.time) <= eff ? i : acc, -1);
+  const nxt = currentIdx < schedule.length - 1 ? schedule[currentIdx + 1] : null;
+  if (!nxt) return;
+  syncToRow(nxt);
+}
+
+function confirmFinished() {
+  if (!alertItem) { dismissAlert(); return; }
+  const scheduledSec = alertItem.scheduledSec;
+  const delaySec = Math.round(effSec() - scheduledSec);
+  if (delaySec > 0) {
+    offsetSec += delaySec;
+    setInputsFromOffset(offsetSec);
+    updateOffsetDisplay();
+    broadcastOffset(offsetSec);
+    const toast = document.getElementById('sync-toast');
+    toast.textContent = `⏱ Harmonogram przesunięty o +${delaySec}s (opóźnienie)`;
+    toast.classList.add('visible');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toast.classList.remove('visible'), 4000);
+  }
+  dismissed = new Set();
+  alertItem = null;
+  renderTable();
+  dismissAlert();
+}
+
+// ─── IMPORT SZPIGLA ───────────────────────────────────────────────────────────
+let importedRows = [];   // surowe wiersze z pliku
+let importedHeaders = []; // nagłówki kolumn
+let importCounter = 0;
+
+function toggleImport() {
+  const p = document.getElementById('import-panel');
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) parseImportFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) parseImportFile(file);
+  e.target.value = '';
+}
+
+function excelTimeToStr(v) {
+  // Excel fraction (0–1) → HH:MM:SS
+  if (typeof v === 'number' && v > 0 && v < 1) {
+    const sec = Math.round(v * 86400);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  // Liczba całkowita = minuty od północy (np. 630 = 10:30)
+  if (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 1440) {
+    const h = Math.floor(v / 60);
+    const m = v % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`;
+  }
+  return String(v);
+}
+
+function normalizeTimeStr(raw) {
+  if (raw === null || raw === undefined) return null;
+  // Excel fraction
+  if (typeof raw === 'number' && raw > 0 && raw < 1) return excelTimeToStr(raw);
+  // Minuty od północy jako liczba całkowita
+  if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw <= 1440)
+    return excelTimeToStr(raw);
+  const s = String(raw).trim();
+  if (!s) return null;
+  // HH:MM:SS
+  if (/^\d{1,2}:\d{2}:\d{2}$/.test(s)) return s;
+  // HH:MM → HH:MM:00
+  if (/^\d{1,2}:\d{2}$/.test(s)) return s + ':00';
+  // Samo MM jako tekst (np. "30" → 00:30:00) lub liczba < 100
+  if (/^\d{1,3}$/.test(s)) {
+    const n = parseInt(s, 10);
+    if (n <= 1440) {
+      const h = Math.floor(n / 60);
+      const m = n % 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`;
+    }
+  }
+  return null;
+}
+
+function looksLikeTime(val) {
+  return normalizeTimeStr(val) !== null;
+}
+
+function parseImportFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  document.getElementById('import-filename').textContent = `⏳ Wczytuję ${file.name}…`;
+  document.getElementById('import-step-1').style.display = 'none';
+  document.getElementById('import-step-2').style.display = '';
+
+  if (ext === 'pdf') {
+    parsePdfFile(file);
+  } else if (ext === 'docx' || ext === 'doc') {
+    parseDocxFile(file);
+  } else {
+    parseExcelFile(file);
+  }
+}
+
+// ── EXCEL / CSV ───────────────────────────────────────────────────────────────
+function parseExcelFile(file) {
+  const reader = new FileReader();
+  const isCSV = file.name.toLowerCase().endsWith('.csv');
+  reader.onload = (e) => {
+    try {
+      let wb;
+      if (isCSV) wb = XLSX.read(e.target.result, { type: 'string', raw: false });
+      else wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+      if (data.length < 2) { alert('Plik jest pusty!'); importReset(); return; }
+      let headerRow = 0;
+      for (let i = 0; i < Math.min(5, data.length); i++) {
+        if (data[i].some(c => c !== '')) { headerRow = i; break; }
+      }
+      importedHeaders = data[headerRow].map((h, i) => h !== '' ? String(h) : `Kolumna ${i+1}`);
+      importedRows    = data.slice(headerRow + 1).filter(r => r.some(c => c !== ''));
+      finishFileLoad(file.name);
+    } catch(err) { alert('Błąd odczytu: ' + err.message); importReset(); }
+  };
+  if (isCSV) reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+async function parsePdfFile(file) {
+  try {
+    const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+    if (!pdfjsLib) throw new Error('PDF.js nie załadowany');
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let allLines = [];
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const tc   = await page.getTextContent();
+      // Grupuj po pozycji Y (linia)
+      const byY = {};
+      tc.items.forEach(it => {
+        const y = Math.round(it.transform[5]);
+        if (!byY[y]) byY[y] = [];
+        byY[y].push({ x: it.transform[4], str: it.str });
+      });
+      Object.keys(byY).sort((a, b) => b - a).forEach(y => {
+        const line = byY[y].sort((a, b) => a.x - b.x).map(i => i.str).join(' ').trim();
+        if (line) allLines.push(line);
+      });
+    }
+    textToImportedRows(allLines);
+    finishFileLoad(file.name);
+  } catch(err) {
+    alert('Błąd PDF: ' + err.message); importReset();
+  }
+}
+
+// ── DOCX / DOC ────────────────────────────────────────────────────────────────
+async function parseDocxFile(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    const lines  = result.value.split('\n').map(l => l.trim()).filter(l => l);
+    textToImportedRows(lines);
+    finishFileLoad(file.name);
+  } catch(err) {
+    alert('Błąd DOCX: ' + err.message); importReset();
+  }
+}
+
+// ── PARSER TEKSTU → wiersze tabeli ───────────────────────────────────────────
+const TIME_RE = /(\d{1,2}:\d{2}(?::\d{2})?)/;
+const LINE_TIME_RE = /^(\d{1,2}:\d{2}(?::\d{2})?)(?:\s*[-–]\s*\d{1,2}:\d{2}(?::\d{2})?)?\s*(.*)/;
+
+function textToImportedRows(lines) {
+  // Znajdź wiersze z czasem i połącz z kolejnymi wierszami bez czasu
+  const entries = [];
+  let current = null;
+
+  lines.forEach(line => {
+    const m = line.match(LINE_TIME_RE);
+    if (m) {
+      if (current) entries.push(current);
+      current = { time: m[1], parts: [m[2].trim()].filter(Boolean) };
+    } else if (current) {
+      if (line.length > 1) current.parts.push(line);
+    } else {
+      // Linia przed pierwszym czasem — ignoruj lub zapisz jako nagłówek
+    }
+  });
+  if (current) entries.push(current);
+
+  if (entries.length === 0) {
+    alert('Nie znaleziono żadnych godzin w pliku. Sprawdź czy plik zawiera format HH:MM.'); importReset(); return;
+  }
+
+  // Wirtualne kolumny: Czas | Linia 1 | Pozostały tekst
+  importedHeaders = ['Czas', 'Pierwsza linia', 'Pozostały tekst', 'Cały tekst'];
+  importedRows = entries.map(e => [
+    e.time,
+    e.parts[0] || '',
+    e.parts.slice(1).join(' '),
+    e.parts.join(' | ')
+  ]);
+}
+
+function finishFileLoad(filename) {
+  document.getElementById('import-filename').textContent = `📄 ${filename}  (${importedRows.length} punktów)`;
+  document.getElementById('import-name').value = filename.replace(/\.[^.]+$/, '');
+  buildPreview();
+  buildColumnSelectors();
+  autoDetectColumns();
+  showImportWarning();
+}
+
+function buildPreview() {
+  const preview = document.getElementById('import-preview');
+  const rows = importedRows.slice(0, 6);
+  let html = '<table><tr>' + importedHeaders.map(h => `<th>${h}</th>`).join('') + '</tr>';
+  rows.forEach(r => {
+    html += '<tr>' + importedHeaders.map((_, i) => {
+      let v = r[i] ?? '';
+      const norm = normalizeTimeStr(v);
+      const display = norm && norm !== String(v) ? `${norm} <span style="color:#3a4a5a">(${v})</span>` : v;
+      return `<td title="${v}">${display}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</table>';
+  preview.innerHTML = html;
+}
+
+function buildColumnSelectors() {
+  const opts = importedHeaders.map((h, i) => `<option value="${i}">${h}</option>`).join('');
+  const noneOpt = `<option value="">— brak —</option>`;
+  ['col-time','col-event','col-central'].forEach(id => {
+    document.getElementById(id).innerHTML = opts;
+  });
+  document.getElementById('col-timer').innerHTML = noneOpt + opts;
+}
+
+function autoDetectColumns() {
+  // Wykryj kolumnę czasu
+  let timeCol = -1;
+  const timeKeywords = ['czas','od','time','godz','godzina','start','początek'];
+  importedHeaders.forEach((h, i) => {
+    if (timeKeywords.some(k => h.toLowerCase().includes(k))) timeCol = i;
+  });
+  if (timeCol === -1) {
+    importedHeaders.forEach((_, i) => {
+      const vals = importedRows.slice(0,5).map(r => r[i]);
+      if (vals.filter(v => looksLikeTime(v)).length >= 2) timeCol = i;
+    });
+  }
+  if (timeCol >= 0) document.getElementById('col-time').value = timeCol;
+
+  // Wykryj kolumnę wyświetlania (najważniejszą)
+  const centralKeywords = ['ekran','central','prelegent','speaker','nazwa','tytuł','pierwsza linia'];
+  let centralCol = -1;
+  importedHeaders.forEach((h, i) => {
+    if (i !== timeCol && centralKeywords.some(k => h.toLowerCase().includes(k))) centralCol = i;
+  });
+  // PDF/DOCX: "Pierwsza linia" jako domyślna najważniejsza
+  if (centralCol === -1) {
+    const fl = importedHeaders.findIndex(h => h === 'Pierwsza linia');
+    if (fl >= 0) centralCol = fl;
+  }
+  if (centralCol >= 0) document.getElementById('col-central').value = centralCol;
+
+  // Wykryj opis — preferuj "Cały tekst" dla PDF/DOCX
+  const eventKeywords = ['opis','event','punkt','cały','treść','wykład','pozostały','tekst'];
+  let eventCol = -1;
+  importedHeaders.forEach((h, i) => {
+    if (i !== timeCol && i !== centralCol &&
+        eventKeywords.some(k => h.toLowerCase().includes(k))) eventCol = i;
+  });
+  if (eventCol === -1) {
+    let maxAvg = 0;
+    importedHeaders.forEach((_, i) => {
+      if (i === timeCol || i === centralCol) return;
+      const avg = importedRows.slice(0,5).reduce((s, r) => s + String(r[i]||'').length, 0) / 5;
+      if (avg > maxAvg) { maxAvg = avg; eventCol = i; }
+    });
+  }
+  if (eventCol >= 0) document.getElementById('col-event').value = eventCol;
+}
+
+function showImportWarning() {
+  const warn = document.getElementById('import-warning');
+  // Sprawdź czy "kolumna najważniejsza" jest unikalna i oczywista
+  const centralKeywords = ['ekran','central','prelegent','speaker'];
+  const matched = importedHeaders.filter(h =>
+    centralKeywords.some(k => h.toLowerCase().includes(k))
+  );
+  if (matched.length === 0) {
+    warn.style.display = '';
+    warn.textContent = '⚠️ Nie wykryto automatycznie kolumny wyświetlania. Wybierz ręcznie z listy „Kolumna najważniejsza" – to co będzie pokazane na głównym ekranie.';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+function importConfirm() {
+  const name  = document.getElementById('import-name').value.trim() || `Import ${++importCounter}`;
+  const ti    = parseInt(document.getElementById('col-time').value);
+  const ei    = parseInt(document.getElementById('col-event').value);
+  const ci    = parseInt(document.getElementById('col-central').value);
+  const tmri  = document.getElementById('col-timer').value;
+
+  if (isNaN(ti) || isNaN(ei) || isNaN(ci)) {
+    alert('Wybierz kolumny czasu, opisu i wyświetlania!'); return;
+  }
+
+  const items = [];
+  importedRows.forEach(row => {
+    const rawTime = row[ti] ?? '';
+    const t = normalizeTimeStr(rawTime);
+    if (!t) return; // pomiń wiersze bez poprawnego czasu
+
+    const ev  = String(row[ei] ?? '').trim();
+    const cen = String(row[ci] ?? '').trim();
+    const tmr = tmri !== '' ? String(row[parseInt(tmri)] ?? '').trim() : '';
+
+    items.push({ time: t, event: ev || cen, central: cen || ev, ...(tmr ? { timer: tmr } : {}) });
+  });
+
+  if (items.length === 0) {
+    alert('Nie znaleziono żadnych wierszy z poprawnym czasem! Sprawdź kolumnę czasu.'); return;
+  }
+
+  items.sort((a, b) => timeToSec(a.time) - timeToSec(b.time));
+
+  const colLabel = importedHeaders[ci] || 'WYŚWIETLANIE';
+  SCHEDULE[name] = items;
+  CONF_META[name] = { colLabel: colLabel.toUpperCase(), nowLabel: `AKTUALNIE – ${colLabel.toUpperCase()}` };
+
+  // Dodaj przycisk dnia
+  addImportedDayButton(name);
+
+  // Przełącz na nowy harmonogram
+  const btn = document.querySelector(`[data-day="${name}"]`);
+  if (btn) setDay(name, btn);
+
+  importReset();
+  document.getElementById('import-panel').style.display = 'none';
+
+  const toast = document.getElementById('sync-toast');
+  toast.textContent = `✓ Zaimportowano "${name}" – ${items.length} punktów`;
+  toast.classList.add('visible');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => toast.classList.remove('visible'), 4000);
+}
+
+function addImportedDayButton(name) {
+  const container = document.getElementById('imported-days-container');
+  const btn = document.createElement('button');
+  btn.className = 'day-btn day-btn-imported';
+  btn.dataset.day = name;
+  btn.onclick = function() { setDay(name, this); };
+  btn.innerHTML = `📋 ${name} <span class="badge-del" onclick="event.stopPropagation();removeImportedDay('${name}', this.parentElement)" title="Usuń">✕</span>`;
+  container.appendChild(btn);
+}
+
+function removeImportedDay(name, btn) {
+  delete SCHEDULE[name];
+  delete CONF_META[name];
+  btn.remove();
+  if (selectedDay === name) setDay('18.05.2026', document.querySelector('.day-btn'));
+}
+
+function importReset() {
+  importedRows = [];
+  importedHeaders = [];
+  document.getElementById('import-step-1').style.display = '';
+  document.getElementById('import-step-2').style.display = 'none';
+  document.getElementById('import-preview').innerHTML = '';
+}
+
+// ─── CRYPTO ───────────────────────────────────────────────────────────────────
+const CRYPTO_COINS = {
+  bitcoin:      'BTC',
+  ethereum:     'ETH',
+  'bitget-token': 'BGB',
+  hyperliquid:  'HYPE'
+};
+const CRYPTO_IDS = Object.keys(CRYPTO_COINS).join(',');
+
+function fmtPrice(p) {
+  if (p >= 1000) return '$' + p.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (p >= 1)    return '$' + p.toFixed(2);
+  return '$' + p.toFixed(4);
+}
+function fmtPct(v) {
+  if (v == null) return '—';
+  const s = v > 0 ? '+' : '';
+  return `${s}${v.toFixed(2)}%`;
+}
+function pctClass(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
+
+async function fetch12hChange(id, currentPrice) {
+  try {
+    const r = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=1&interval=hourly`);
+    const d = await r.json();
+    const prices = d.prices;
+    if (prices && prices.length >= 13) {
+      const p12h = prices[prices.length - 13][1];
+      return ((currentPrice - p12h) / p12h) * 100;
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function fetchCrypto() {
+  try {
+    // Fetch specific coins + top 100 in parallel
+    const [marketsRes, top100Res] = await Promise.all([
+      fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${CRYPTO_IDS}&price_change_percentage=1h,24h&order=market_cap_desc&sparkline=false`),
+      fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&price_change_percentage=1h&sparkline=false`)
+    ]);
+    const markets = await marketsRes.json();
+    const top100  = await top100Res.json();
+
+    // 12h for each specific coin
+    const changes12h = {};
+    await Promise.all(markets.map(async c => {
+      changes12h[c.id] = await fetch12hChange(c.id, c.current_price);
+    }));
+
+    // Best 1h gainer from top 100
+    let best = null;
+    top100.forEach(c => {
+      const pct = c.price_change_percentage_1h_in_currency;
+      if (pct != null && (!best || pct > best.pct)) best = { ...c, pct };
+    });
+
+    renderCrypto(markets, changes12h, best);
+
+    const now = new Date();
+    document.getElementById('crypto-refresh-time').textContent =
+      `ODŚWIEŻONO ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  } catch(e) {
+    document.getElementById('crypto-grid').innerHTML =
+      `<div class="crypto-loading" style="color:#ff4444">⚠️ Błąd pobierania danych krypto</div>`;
+  }
+}
+
+function renderCrypto(markets, changes12h, best) {
+  const grid = document.getElementById('crypto-grid');
+  let html = '';
+
+  // Specific coins in fixed order
+  const order = ['bitcoin','ethereum','bitget-token','hyperliquid'];
+  order.forEach(id => {
+    const c = markets.find(m => m.id === id);
+    if (!c) return;
+    const sym  = CRYPTO_COINS[id] || c.symbol.toUpperCase();
+    const p1h  = c.price_change_percentage_1h_in_currency;
+    const p12h = changes12h[id];
+    const p24h = c.price_change_percentage_24h_in_currency;
+    html += `
+    <div class="crypto-card">
+      <div class="crypto-sym">${sym}</div>
+      <div class="crypto-price">${fmtPrice(c.current_price)}</div>
+      <div class="crypto-changes">
+        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="${pctClass(p1h)}">${fmtPct(p1h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">12h</span><span class="${pctClass(p12h)}">${fmtPct(p12h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">24h</span><span class="${pctClass(p24h)}">${fmtPct(p24h)}</span></div>
+      </div>
+    </div>`;
+  });
+
+  // Best gainer
+  if (best) {
+    html += `
+    <div class="crypto-card best">
+      <div class="best-badge">🏆 BEST 1H</div>
+      <div class="crypto-sym">${best.symbol.toUpperCase()}</div>
+      <div class="crypto-price">${fmtPrice(best.current_price)}</div>
+      <div class="crypto-changes">
+        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="pos">${fmtPct(best.pct)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl" style="color:#3a4a5a">Top 100</span><span style="color:#4a5a70">#${best.market_cap_rank}</span></div>
+      </div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderTable();
+tick();
+setInterval(tick, 200);
+sbConnect();
+fetchCrypto();
+setInterval(fetchCrypto, 5 * 60 * 1000); // odśwież co 5 minut
+</script>
+</body>
+</html>
