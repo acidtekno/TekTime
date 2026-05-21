@@ -619,7 +619,6 @@
     </div>
   </div>
   <div class="overlay-actions" onclick="event.stopPropagation()">
-    <button class="overlay-btn-jump" onclick="event.stopPropagation();overlayJumpNext()">→ NASTĘPNY PUNKT</button>
     <button class="overlay-btn-over" id="overtime-btn" onclick="event.stopPropagation();overlayOvertime()">⏱ OVER TIME</button>
   </div>
   <div class="overlay-hint">KLIKNIJ GDZIEKOLWIEK, ABY ZAMKNĄĆ</div>
@@ -705,30 +704,6 @@
     </div>
   </div>
 
-  <!-- OFFSET -->
-  <div class="card offset-card">
-    <div class="card-label">Przesunięcie czasu (względem szpigla)</div>
-    <div class="offset-row">
-      <div class="offset-group">
-        <label>Minuty:</label>
-        <input type="number" id="inp-min" placeholder="0" value="0">
-      </div>
-      <div class="offset-group">
-        <label>Sekundy:</label>
-        <input type="number" id="inp-sec" placeholder="0" value="0">
-      </div>
-      <button class="btn-apply" onclick="applyOffset()">Zastosuj</button>
-      <button class="btn-reset" id="btn-reset" style="display:none" onclick="resetOffset()">Resetuj (0)</button>
-      <span id="offset-display"></span>
-    </div>
-    <div class="offset-hint">Wartości dodatnie = Twój zegar jest za szpiglem. Ujemne = przed szpiglem.</div>
-    <div id="sync-status" style="display:flex;align-items:center;gap:10px;margin-top:8px">
-      <span id="sync-dot"></span>
-      <span id="sync-label">ŁĄCZENIE…</span>
-      <button id="sync-toggle-btn" onclick="toggleSync()" style="margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid #2a3a5a;background:transparent;color:#6a8aaa;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s">⏸ WYŁĄCZ SYNC</button>
-    </div>
-  </div>
-
   <div class="now-next">
     <div class="card now-card">
       <div class="card-label" id="now-card-label">AKTUALNIE – EKRAN CENTRALNY</div>
@@ -770,8 +745,35 @@
 
   <!-- TABLE -->
   <div class="card table-card">
-    <div class="table-header" id="table-header">HARMONOGRAM – EKRAN CENTRALNY</div>
+    <div class="table-header" id="table-header" style="display:flex;align-items:center;justify-content:space-between">
+      <span id="table-header-text">HARMONOGRAM – EKRAN CENTRALNY</span>
+      <button onclick="manualScroll=false;scrollToCurrentRow(lastCurrentIdx)" title="Przewiń do aktualnego miejsca" style="padding:3px 10px;border-radius:6px;border:1px solid #1e2a4a;background:transparent;color:#3a4a7a;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='#3a4a7a';this.style.borderColor='#1e2a4a'">⬆ TERAZ</button>
+    </div>
     <div class="table-body" id="table-body"></div>
+  </div>
+
+  <!-- OFFSET -->
+  <div class="card offset-card">
+    <div class="card-label">Przesunięcie czasu (względem szpigla)</div>
+    <div class="offset-row">
+      <div class="offset-group">
+        <label>Minuty:</label>
+        <input type="number" id="inp-min" placeholder="0" value="0">
+      </div>
+      <div class="offset-group">
+        <label>Sekundy:</label>
+        <input type="number" id="inp-sec" placeholder="0" value="0">
+      </div>
+      <button class="btn-apply" onclick="applyOffset()">Zastosuj</button>
+      <button class="btn-reset" id="btn-reset" style="display:none" onclick="resetOffset()">Resetuj (0)</button>
+      <span id="offset-display"></span>
+    </div>
+    <div class="offset-hint">Wartości dodatnie = Twój zegar jest za szpiglem. Ujemne = przed szpiglem.</div>
+    <div id="sync-status" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <span id="sync-dot"></span>
+      <span id="sync-label">ŁĄCZENIE…</span>
+      <button id="sync-toggle-btn" onclick="toggleSync()" style="margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid #2a3a5a;background:transparent;color:#6a8aaa;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s">⏸ WYŁĄCZ SYNC</button>
+    </div>
   </div>
 
   <!-- CRYPTO -->
@@ -782,6 +784,17 @@
     </div>
     <div class="crypto-grid" id="crypto-grid">
       <div class="crypto-loading">⏳ Pobieranie cen…</div>
+    </div>
+  </div>
+
+  <!-- STOCKS -->
+  <div class="crypto-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="card-label" style="margin:0">AKCJE</div>
+      <div id="stocks-refresh-time" class="crypto-refresh"></div>
+    </div>
+    <div class="crypto-grid" id="stocks-grid">
+      <div class="crypto-loading">⏳ Pobieranie kursów…</div>
     </div>
   </div>
 
@@ -1133,7 +1146,10 @@ function setDay(day, btn) {
   document.querySelectorAll(".day-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   const meta = CONF_META[day] || {};
-  document.getElementById("table-header").textContent = `HARMONOGRAM · ${meta.colLabel||"WYŚWIETLANIE"} · ${day}`;
+  const headerText = `HARMONOGRAM · ${meta.colLabel||"WYŚWIETLANIE"} · ${day}`;
+  const hEl = document.getElementById("table-header-text");
+  if (hEl) hEl.textContent = headerText;
+  else document.getElementById("table-header").textContent = headerText;
   document.getElementById("now-card-label").textContent = meta.nowLabel || "AKTUALNIE";
   renderTable();
 }
@@ -1145,6 +1161,9 @@ function syncToRow(item) {
   setInputsFromOffset(offsetSec);
   updateOffsetDisplay();
   dismissed = new Set();
+  // Nie migaj alertem dla punktu do którego właśnie przeszliśmy
+  const key = `${selectedDay}_${item.time}`;
+  dismissed.add(key);
   alertItem = null;
   dismissAlert();
   renderTable();
@@ -1187,6 +1206,7 @@ function renderTable() {
   });
   updateNowNext(schedule, currentIdx, eff);
   // Przewiń do aktualnego wiersza po wyrenderowaniu
+  manualScroll = false;
   setTimeout(() => scrollToCurrentRow(currentIdx), 50);
 }
 
@@ -1323,23 +1343,31 @@ function showAlert() {
 }
 
 let overlayOverTime = false;
+let overlayNextItem = null;  // punkt który miał być następny wg harmonogramu
 
 function overlayOvertime() {
   overlayOverTime = true;
   if (flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+
+  // GO ma zabrać do TEGO punktu który alertował (nie do następnego po nim)
+  overlayNextItem = alertItem ? { ...alertItem } : null;
+
   const overlay = document.getElementById("overlay");
   overlay.className = "overlay active";
   overlay.style.background = "rgba(8,8,20,0.96)";
-  document.getElementById("overlay-badge").textContent = "⏳ OVER TIME – KLIKNIJ NEXT GDY PUNKT SIĘ SKOŃCZY";
+  document.getElementById("overlay-badge").textContent = "⏳ OVER TIME – NACIŚNIJ GO GDY POPRZEDNI PUNKT SIĘ SKOŃCZY";
   const btn = document.getElementById("overtime-btn");
-  btn.textContent = "→ NEXT";
+  btn.textContent = "▶ GO";
   btn.classList.add("is-next");
   btn.onclick = (e) => { e.stopPropagation(); overlayJumpNext(); };
 }
 
 function overlayJumpNext() {
-  jumpToNext();
+  if (overlayNextItem) {
+    syncToRow(overlayNextItem);
+  }
   overlayOverTime = false;
+  overlayNextItem = null;
   dismissAlert();
 }
 
@@ -1358,6 +1386,7 @@ function doFlash() {
 function dismissAlert() {
   alertActive = false;
   overlayOverTime = false;
+  overlayNextItem = null;
   if (alertItem) dismissed.add(alertItem.key);
   alertItem = null;
   if (flashInterval) { clearInterval(flashInterval); flashInterval = null; }
@@ -1371,20 +1400,42 @@ function dismissAlert() {
     btn.onclick = (e) => { e.stopPropagation(); overlayOvertime(); };
   }
 }
-
-// ─── CLOCK TICK ──────────────────────────────────────────────────────────────
 let lastCurrentIdx = -2;
+let manualScroll = false;
+let scrollLockTimer = null;
+
+function initScrollListener() {
+  const body = document.getElementById("table-body");
+  if (!body) return;
+  body.addEventListener("scroll", () => {
+    if (window._programmaticScroll) return; // ignoruj scroll z kodu
+    manualScroll = true;
+    clearTimeout(scrollLockTimer);
+  }, { passive: true });
+}
 
 function scrollToCurrentRow(currentIdx) {
+  if (manualScroll) return;
   const body = document.getElementById("table-body");
   const rows = body.querySelectorAll(".row");
   if (currentIdx < 0 || !rows[currentIdx]) return;
-  const row = rows[currentIdx];
-  const rowTop = row.offsetTop;
-  const rowH = row.offsetHeight;
-  const bodyH = body.clientHeight;
-  // Wyśrodkuj aktualny wiersz w okienku tabeli
-  body.scrollTop = rowTop - bodyH / 2 + rowH / 2;
+
+  const prevIdx = Math.max(0, currentIdx - 1);
+  const nextIdx = Math.min(rows.length - 1, currentIdx + 1);
+  const prevRow = rows[prevIdx];
+  const nextRow = rows[nextIdx];
+  if (!prevRow) return;
+
+  // getBoundingClientRect daje rzeczywistą pozycję w oknie przeglądarki
+  const bodyRect = body.getBoundingClientRect();
+  const prevTop  = prevRow.getBoundingClientRect().top  - bodyRect.top + body.scrollTop;
+  const nextBot  = (nextRow || prevRow).getBoundingClientRect().bottom - bodyRect.top + body.scrollTop;
+  const curTop   = rows[currentIdx].getBoundingClientRect().top - bodyRect.top + body.scrollTop;
+
+  window._programmaticScroll = true;
+  // Jeśli prev+cur+next mieszczą się → poprzedni na górze; wpp → aktualny na górze
+  body.scrollTop = (nextBot - prevTop <= body.clientHeight) ? prevTop : curTop;
+  requestAnimationFrame(() => { window._programmaticScroll = false; });
 }
 
 function tick() {
@@ -1430,6 +1481,7 @@ function tick() {
   // Auto-scroll gdy zmieni się aktualny wiersz
   if (currentIdx !== lastCurrentIdx) {
     lastCurrentIdx = currentIdx;
+    manualScroll = false; // nowy punkt — wróć do auto-scroll
     scrollToCurrentRow(currentIdx);
   }
   checkAlert();
@@ -1828,64 +1880,70 @@ function importReset() {
   document.getElementById('import-preview').innerHTML = '';
 }
 
-// ─── CRYPTO ───────────────────────────────────────────────────────────────────
-const CRYPTO_COINS = {
-  bitcoin:      'BTC',
-  ethereum:     'ETH',
-  'bitget-token': 'BGB',
-  hyperliquid:  'HYPE'
-};
-const CRYPTO_IDS = Object.keys(CRYPTO_COINS).join(',');
+// ─── CRYPTO (CryptoCompare) ───────────────────────────────────────────────────
+const CC = 'https://min-api.cryptocompare.com/data/v2/histohour';
+const CC_TOP = 'https://min-api.cryptocompare.com/data/top/totalvolfull?limit=100&tsym=USD';
+
+const CRYPTO_COINS = { BTC:'BTC', ETH:'ETH', BGB:'BGB', HYPE:'HYPE' };
+const CRYPTO_DISPLAY = { BTC:'Bitcoin', ETH:'Ethereum', BGB:'Bitget Token', HYPE:'Hyperliquid' };
 
 function fmtPrice(p) {
+  if (p == null) return '—';
   if (p >= 1000) return '$' + p.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (p >= 1)    return '$' + p.toFixed(2);
   return '$' + p.toFixed(4);
 }
 function fmtPct(v) {
   if (v == null) return '—';
-  const s = v > 0 ? '+' : '';
-  return `${s}${v.toFixed(2)}%`;
+  return (v > 0 ? '+' : '') + v.toFixed(2) + '%';
 }
 function pctClass(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
 
-async function fetch12hChange(id, currentPrice) {
+async function fetchCCHist(symbol) {
   try {
-    const r = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=1&interval=hourly`);
+    const r = await fetch(`${CC}?fsym=${symbol}&tsym=USD&limit=25`);
+    if (!r.ok) throw new Error(r.status);
     const d = await r.json();
-    const prices = d.prices;
-    if (prices && prices.length >= 13) {
-      const p12h = prices[prices.length - 13][1];
-      return ((currentPrice - p12h) / p12h) * 100;
-    }
-  } catch(e) {}
-  return null;
+    const data = d.Data?.Data;
+    if (!data || data.length < 2) return null;
+    const cur  = data[data.length - 1].close;
+    if (!cur) return null;
+    const pct  = (prev) => prev ? ((cur - prev) / prev) * 100 : null;
+    return {
+      price:     cur,
+      change1h:  pct(data[data.length - 2]?.close),
+      change12h: pct(data.length >= 13 ? data[data.length - 13]?.close : null),
+      change24h: pct(data.length >= 25 ? data[data.length - 25]?.close : null),
+    };
+  } catch(e) { return null; }
 }
 
 async function fetchCrypto() {
   try {
-    // Fetch specific coins + top 100 in parallel
-    const [marketsRes, top100Res] = await Promise.all([
-      fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${CRYPTO_IDS}&price_change_percentage=1h,24h&order=market_cap_desc&sparkline=false`),
-      fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&price_change_percentage=1h&sparkline=false`)
-    ]);
-    const markets = await marketsRes.json();
-    const top100  = await top100Res.json();
+    const symbols = Object.keys(CRYPTO_COINS);
+    const results = await Promise.all(symbols.map(s => fetchCCHist(s)));
+    const bySymbol = {};
+    symbols.forEach((s, i) => { if (results[i]) bySymbol[s] = results[i]; });
 
-    // 12h for each specific coin
-    const changes12h = {};
-    await Promise.all(markets.map(async c => {
-      changes12h[c.id] = await fetch12hChange(c.id, c.current_price);
-    }));
-
-    // Best 1h gainer from top 100
+    // Best 1h gainer z top 100 wolumenu
     let best = null;
-    top100.forEach(c => {
-      const pct = c.price_change_percentage_1h_in_currency;
-      if (pct != null && (!best || pct > best.pct)) best = { ...c, pct };
-    });
+    try {
+      const r = await fetch(CC_TOP);
+      const d = await r.json();
+      const coins = d.Data || [];
+      coins.forEach(c => {
+        const info = c.RAW?.USD;
+        if (!info) return;
+        const pct = info.CHANGEPCTHOUR;
+        const sym = c.CoinInfo?.Name;
+        const price = info.PRICE;
+        if (pct != null && price != null && (!best || pct > best.pct)) {
+          best = { sym, pct, price, name: c.CoinInfo?.FullName || sym };
+        }
+      });
+    } catch(e) {}
 
-    renderCrypto(markets, changes12h, best);
+    renderCrypto(bySymbol, best);
 
     const now = new Date();
     document.getElementById('crypto-refresh-time').textContent =
@@ -1893,59 +1951,165 @@ async function fetchCrypto() {
 
   } catch(e) {
     document.getElementById('crypto-grid').innerHTML =
-      `<div class="crypto-loading" style="color:#ff4444">⚠️ Błąd pobierania danych krypto</div>`;
+      `<div class="crypto-loading" style="color:#ff4444">⚠️ Błąd krypto: ${e.message}</div>`;
   }
 }
 
-function renderCrypto(markets, changes12h, best) {
+function renderCrypto(bySymbol, best) {
   const grid = document.getElementById('crypto-grid');
   let html = '';
-
-  // Specific coins in fixed order
-  const order = ['bitcoin','ethereum','bitget-token','hyperliquid'];
-  order.forEach(id => {
-    const c = markets.find(m => m.id === id);
-    if (!c) return;
-    const sym  = CRYPTO_COINS[id] || c.symbol.toUpperCase();
-    const p1h  = c.price_change_percentage_1h_in_currency;
-    const p12h = changes12h[id];
-    const p24h = c.price_change_percentage_24h_in_currency;
-    html += `
-    <div class="crypto-card">
+  ['BTC','ETH','BGB','HYPE'].forEach(sym => {
+    const d = bySymbol[sym];
+    html += `<div class="crypto-card">
       <div class="crypto-sym">${sym}</div>
-      <div class="crypto-price">${fmtPrice(c.current_price)}</div>
+      <div class="crypto-price">${d ? fmtPrice(d.price) : '—'}</div>
       <div class="crypto-changes">
-        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="${pctClass(p1h)}">${fmtPct(p1h)}</span></div>
-        <div class="crypto-chg"><span class="crypto-chg-lbl">12h</span><span class="${pctClass(p12h)}">${fmtPct(p12h)}</span></div>
-        <div class="crypto-chg"><span class="crypto-chg-lbl">24h</span><span class="${pctClass(p24h)}">${fmtPct(p24h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="${pctClass(d?.change1h)}">${fmtPct(d?.change1h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">12h</span><span class="${pctClass(d?.change12h)}">${fmtPct(d?.change12h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">24h</span><span class="${pctClass(d?.change24h)}">${fmtPct(d?.change24h)}</span></div>
       </div>
     </div>`;
   });
-
-  // Best gainer
   if (best) {
-    html += `
-    <div class="crypto-card best">
+    html += `<div class="crypto-card best">
       <div class="best-badge">🏆 BEST 1H</div>
-      <div class="crypto-sym">${best.symbol.toUpperCase()}</div>
-      <div class="crypto-price">${fmtPrice(best.current_price)}</div>
+      <div class="crypto-sym">${best.sym}</div>
+      <div class="crypto-price">${fmtPrice(best.price)}</div>
       <div class="crypto-changes">
         <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="pos">${fmtPct(best.pct)}</span></div>
-        <div class="crypto-chg"><span class="crypto-chg-lbl" style="color:#3a4a5a">Top 100</span><span style="color:#4a5a70">#${best.market_cap_rank}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl" style="color:#3a4a5a">${best.name?.slice(0,16) || ''}</span></div>
       </div>
     </div>`;
   }
-
   grid.innerHTML = html;
+}
+
+// ─── AKCJE (Yahoo Finance przez proxy) ───────────────────────────────────────
+const STOCKS_SPECIFIC = [
+  { symbol: 'NVDA',   name: 'NVIDIA',     currency: 'USD' },
+  { symbol: 'CDR.WA', name: 'CD PROJEKT', currency: 'PLN' },
+  { symbol: 'KGH.WA', name: 'KGHM',       currency: 'PLN' },
+  { symbol: 'ASB.WA', name: 'ASBIS',      currency: 'PLN' },
+];
+const STOCKS_WATCHLIST = [
+  'NVDA','CDR.WA','KGH.WA','ASB.WA',
+  'AAPL','MSFT','META','AMD','TSLA','GOOGL',
+  'PKN.WA','PKO.WA','PZU.WA','OPL.WA'
+];
+const PROXIES = [
+  url => url,                                                          // direct
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+function fmtStockPrice(price, currency) {
+  if (price == null) return '—';
+  const fmt = currency === 'USD' ? '$' : '';
+  const sfx = currency === 'PLN' ? ' zł' : '';
+  if (price >= 1000) return fmt + price.toLocaleString('pl-PL', { maximumFractionDigits: 0 }) + sfx;
+  return fmt + price.toFixed(2) + sfx;
+}
+
+async function fetchYahooChart(symbol) {
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1h&range=2d&includePrePost=false`;
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy(target), { headers: { 'Accept': 'application/json' } });
+      if (!r.ok) continue;
+      const data = await r.json();
+      const result = data?.chart?.result?.[0];
+      if (!result) continue;
+      const closes = result.indicators?.quote?.[0]?.close?.filter(c => c != null) || [];
+      if (closes.length < 2) continue;
+      const cur = closes[closes.length - 1];
+      const pct = (prev) => prev != null ? ((cur - prev) / prev) * 100 : null;
+      return {
+        symbol,
+        name:      result.meta?.shortName || symbol,
+        price:     cur,
+        currency:  result.meta?.currency || 'USD',
+        change1h:  pct(closes[closes.length - 2]),
+        change12h: pct(closes.length >= 13 ? closes[closes.length - 13] : null),
+        change24h: pct(closes.length >= 25 ? closes[closes.length - 25] : null),
+      };
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+async function fetchStocks() {
+  const allSymbols = [...new Set([
+    ...STOCKS_SPECIFIC.map(s => s.symbol),
+    ...STOCKS_WATCHLIST
+  ])];
+
+  try {
+    const results = await Promise.all(allSymbols.map(s => fetchYahooChart(s)));
+    const bySymbol = {};
+    allSymbols.forEach((s, i) => { if (results[i]) bySymbol[s] = results[i]; });
+
+    const specific = STOCKS_SPECIFIC.map(s => ({
+      ...s, ...(bySymbol[s.symbol] || {})
+    }));
+
+    let bestStock = null;
+    STOCKS_WATCHLIST.forEach(sym => {
+      const d = bySymbol[sym];
+      if (!d || d.change1h == null) return;
+      if (!bestStock || d.change1h > bestStock.change1h) bestStock = d;
+    });
+
+    renderStocks(specific, bestStock);
+
+    const now = new Date();
+    document.getElementById('stocks-refresh-time').textContent =
+      `ODŚWIEŻONO ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  } catch(e) {
+    document.getElementById('stocks-grid').innerHTML =
+      `<div class="crypto-loading" style="color:#ff4444">⚠️ Błąd kursów: ${e.message}</div>`;
+  }
+}
+
+function renderStocks(specific, best) {
+  const grid = document.getElementById('stocks-grid');
+  let html = '';
+  specific.forEach(s => {
+    html += `<div class="crypto-card">
+      <div class="crypto-sym">${s.name}</div>
+      <div class="crypto-price">${fmtStockPrice(s.price ?? null, s.currency)}</div>
+      <div class="crypto-changes">
+        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="${pctClass(s.change1h)}">${fmtPct(s.change1h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">12h</span><span class="${pctClass(s.change12h)}">${fmtPct(s.change12h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl">24h</span><span class="${pctClass(s.change24h)}">${fmtPct(s.change24h)}</span></div>
+      </div>
+    </div>`;
+  });
+  if (best) {
+    const meta = STOCKS_SPECIFIC.find(s => s.symbol === best.symbol);
+    html += `<div class="crypto-card best">
+      <div class="best-badge">🏆 BEST 1H</div>
+      <div class="crypto-sym">${meta?.name || best.name || best.symbol}</div>
+      <div class="crypto-price">${fmtStockPrice(best.price, best.currency)}</div>
+      <div class="crypto-changes">
+        <div class="crypto-chg"><span class="crypto-chg-lbl">1h</span><span class="pos">${fmtPct(best.change1h)}</span></div>
+        <div class="crypto-chg"><span class="crypto-chg-lbl" style="color:#3a4a5a">${best.symbol}</span></div>
+      </div>
+    </div>`;
+  }
+  grid.innerHTML = html || '<div class="crypto-loading">Brak danych — rynki mogą być zamknięte</div>';
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderTable();
+initScrollListener();
 tick();
 setInterval(tick, 200);
 sbConnect();
 fetchCrypto();
-setInterval(fetchCrypto, 5 * 60 * 1000); // odśwież co 5 minut
+setInterval(fetchCrypto, 5 * 60 * 1000);
+fetchStocks();
+setInterval(fetchStocks, 5 * 60 * 1000);
 </script>
 </body>
 </html>
