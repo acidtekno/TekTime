@@ -645,6 +645,8 @@
       <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#3a4a7a;margin-bottom:6px">KONFERENCJA JAKOŚĆ W OZ</div>
       <button class="day-btn active" onclick="setDay('21.05.2026',this)">🏥 21.05 – Dzień 1</button>
       <button class="day-btn" onclick="setDay('22.05.2026',this)">🏥 22.05 – Dzień 2</button>
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#3a4a7a;margin:8px 0 6px">GALA ŚWIĘTA WOJEWÓDZTWA</div>
+      <button class="day-btn" onclick="setDay('07.06.2026',this)">🏆 07.06 – Gala Małopolska</button>
       <div id="imported-days-container"></div>
     </div>
   </div>
@@ -700,6 +702,24 @@
           <button class="btn-import-ok" onclick="importConfirm()">✓ IMPORTUJ</button>
           <button class="btn-import-cancel" onclick="importReset()">✕ Anuluj</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTERNAL TIMER WIDGET -->
+  <div class="card" id="ext-timer-card" style="margin-bottom:16px;background:#080812;border-color:#1a1a3a">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="card-label" style="margin:0">TIMER ZEWNETRZNY</div>
+      <div id="ext-timer-status" style="font-family:var(--mono);font-size:9px;color:#2a3a5a;letter-spacing:2px">BRAK POLACZENIA</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div id="ext-timer-display" style="font-family:var(--mono);font-size:42px;font-weight:800;color:#6688cc;letter-spacing:3px;min-width:160px">--:--:--</div>
+      <div style="flex:1">
+        <div id="ext-timer-label" style="font-size:12px;color:#4a5878;margin-bottom:4px"></div>
+        <div id="ext-timer-prog-wrap" style="height:5px;background:#1a1a3a;border-radius:3px;overflow:hidden">
+          <div id="ext-timer-prog" style="height:100%;width:0%;background:#6688cc;border-radius:3px;transition:width 1s linear,background 0.3s"></div>
+        </div>
+        <div id="ext-timer-state" style="font-family:var(--mono);font-size:10px;color:#3a4a6a;margin-top:4px;letter-spacing:1px"></div>
       </div>
     </div>
   </div>
@@ -769,10 +789,14 @@
       <span id="offset-display"></span>
     </div>
     <div class="offset-hint">Wartości dodatnie = Twój zegar jest za szpiglem. Ujemne = przed szpiglem.</div>
-    <div id="sync-status" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+    <div id="sync-status" style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
       <span id="sync-dot"></span>
-      <span id="sync-label">ŁĄCZENIE…</span>
-      <button id="sync-toggle-btn" onclick="toggleSync()" style="margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid #2a3a5a;background:transparent;color:#6a8aaa;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s">⏸ WYŁĄCZ SYNC</button>
+      <span id="sync-label" style="flex:1">ŁĄCZENIE…</span>
+      <input id="sync-password-input" type="password" placeholder="haslo sync"
+        style="width:110px;padding:4px 8px;border-radius:6px;border:1px solid #2a3a5a;background:#0a0a1e;color:#c8d4f0;font-family:var(--mono);font-size:10px;outline:none"
+        onkeydown="if(event.keyCode===13)verifySyncPassword()"
+      />
+      <button id="sync-toggle-btn" onclick="verifySyncAndToggle()" style="padding:4px 12px;border-radius:6px;border:1px solid #2a3a5a;background:transparent;color:#6a8aaa;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s">⏸ WYŁĄCZ SYNC</button>
     </div>
   </div>
 
@@ -856,14 +880,24 @@ const SCHEDULE_CMJ = {
     { time:"13:40:00", event:"Akredytacja zaczyna się przed projektem inwestycji. Jak OPZ i PFU mogą budować jakość opieki", central:"Piotr Springer", session:"Sesja V – Szpitale Dziecięce" },
     { time:"14:00:00", event:"LUNCH", central:"— koniec konferencji —" },
   ],
+  "07.06.2026": [
+    { time:"17:00:00", event:"Otwarcie Gali\nProwadzący", central:"Plansza 1\nGala Święta → ekran poziomy lewy\nGodło → ekran pionowy prawy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"17:10:00", event:"Wystąpienie\nŁ. Smółka", central:"Plansza 9\nGala Święta → duży poziomy\nGodło → ekran lewy pionowy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"17:15:00", event:"Nagroda im. R. Reinfussa", central:"Plansze 2–8 (rotacja)\nLaureat → ekran poziomy\nLogo Nagrody → ekran pionowy prawy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"17:30:00", event:"Krzyż Małopolski", central:"Plansze 10–12\nPlansza 10 → ekran tytułowy\nPlansza 11 → lista nazwisk 2 rzędy → ekran poziomy\nZłoty Krzyż → ekran pionowy prawy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"17:45:00", event:"Medale Honorowe za Zasługi", central:"Plansze 13–41 (rotacja)\nImię / Nazwisko / Instytucja → ekran poziomy\nMedal brązowy / srebrny / złoty → ekran pionowy prawy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"18:15:00", event:'Występ „Nie dokazuj"', central:"Puste bordowe tło → duży ekran (nad neonem)\nGala Święta → ekran lewy", session:"Gala Święta Województwa Małopolskiego" },
+    { time:"19:00:00", event:"Zakończenie\nProwadzący", central:"Plansza 42\nGala Święta → duży poziomy\nGodło → ekran lewy pionowy", session:"Gala Święta Województwa Małopolskiego" },
+  ],
 };
 
 // Połączone harmonogramy – musi być PO deklaracji obu obiektów
 Object.assign(SCHEDULE, SCHEDULE_CMJ);
 
 const CONF_META = {
-  "21.05.2026": { colLabel: "PRELEGENT", nowLabel: "AKTUALNIE – PRELEGENT" },
-  "22.05.2026": { colLabel: "PRELEGENT", nowLabel: "AKTUALNIE – PRELEGENT" },
+  "21.05.2026": { colLabel: "PRELEGENT",     nowLabel: "AKTUALNIE – PRELEGENT" },
+  "22.05.2026": { colLabel: "PRELEGENT",     nowLabel: "AKTUALNIE – PRELEGENT" },
+  "07.06.2026": { colLabel: "AKCJA EKRANÓW", nowLabel: "AKTUALNIE – EKRANY" },
 };
 
 
@@ -2099,6 +2133,82 @@ function renderStocks(specific, best) {
   }
   grid.innerHTML = html || '<div class="crypto-loading">Brak danych — rynki mogą być zamknięte</div>';
 }
+
+// ─── HASLO SYNC ───────────────────────────────────────────────────────────────
+const SYNC_PASSWORD = '1234'; // ← ZMIEŃ TUTAJ HASŁO (to samo na wszystkich urządzeniach)
+
+let syncPasswordVerified = false;
+
+async function verifySyncAndToggle() {
+  if (syncEnabled) { toggleSync(); return; }
+  const pass = document.getElementById('sync-password-input').value.trim();
+  if (!pass) { alert('Wpisz hasło aby włączyć synchronizację'); return; }
+  if (pass === SYNC_PASSWORD) {
+    syncPasswordVerified = true;
+    toggleSync();
+  } else {
+    const lbl = document.getElementById('sync-label');
+    const dot = document.getElementById('sync-dot');
+    dot.className = 'error';
+    lbl.textContent = 'ZŁE HASŁO!';
+    lbl.style.color = '#ff4444';
+    document.getElementById('sync-password-input').value = '';
+    setTimeout(() => {
+      lbl.style.color = '';
+      setSyncDot(syncEnabled ? 'connected' : '', syncEnabled ? 'SYNCHRONIZACJA AKTYWNA' : 'ŁĄCZENIE…');
+    }, 2000);
+  }
+}
+
+function verifySyncPassword() { verifySyncAndToggle(); }
+
+// ─── EXTERNAL TIMER ───────────────────────────────────────────────────────────
+let extTimerData = null;
+
+function fmtTimerSec(sec) {
+  if (sec == null) return '--:--:--';
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
+}
+
+async function pollExtTimer() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/tektime_timer?id=eq.1`, {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+    });
+    const d = await r.json();
+    if (!d?.[0]) return;
+    const t = d[0];
+    extTimerData = t;
+
+    const disp  = document.getElementById('ext-timer-display');
+    const prog  = document.getElementById('ext-timer-prog');
+    const state = document.getElementById('ext-timer-state');
+    const lbl   = document.getElementById('ext-timer-label');
+    const stat  = document.getElementById('ext-timer-status');
+
+    disp.textContent = fmtTimerSec(t.remaining_sec);
+    lbl.textContent  = t.label || '';
+    state.textContent = t.running ? '▶ DZIAŁA' : (t.remaining_sec > 0 ? '⏸ PAUZA' : '■ STOP');
+    stat.textContent  = 'POŁĄCZONY';
+    stat.style.color  = '#3dffaa';
+
+    const pct = t.total_sec > 0 ? (t.remaining_sec / t.total_sec) * 100 : 0;
+    prog.style.width = pct + '%';
+
+    const color = t.remaining_sec <= 60 ? '#ff4444' : t.remaining_sec <= 300 ? '#ffaa3d' : '#6688cc';
+    disp.style.color = color;
+    prog.style.background = color;
+
+  } catch(e) {
+    document.getElementById('ext-timer-status').textContent = 'BRAK POŁĄCZENIA';
+    document.getElementById('ext-timer-status').style.color = '#2a3a5a';
+  }
+}
+
+setInterval(pollExtTimer, 1000);
+pollExtTimer();
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderTable();
